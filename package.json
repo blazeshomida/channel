@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "vp check",
-    "test": "vp run -r test",
-    "build": "vp run -r build",
-    "pack": "vp run @blazeshomida/channel#pack",
-    "dev:package": "vp run @blazeshomida/channel#dev",
-    "ready": "vp check && vp run -r test && vp run -r build"
+    "dev:package": "vp run task:channel:dev",
+    "dev:vanilla": "vp run task:vanilla:dev",
+    "check": "vp run task:workspace:check",
+    "test": "vp run task:channel:test",
+    "build": "vp run task:vanilla:build",
+    "pack": "vp run task:channel:pack",
+    "ready": "vp run task:ready"
   },
   "devDependencies": {
     "typescript": "catalog:",
