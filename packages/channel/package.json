@@ -22,6 +22,8 @@
   "types": "./dist/index.d.mts",
   "exports": {
     ".": "./dist/index.mjs",
+    "./worker/client": "./dist/worker/client.mjs",
+    "./worker/host": "./dist/worker/host.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {

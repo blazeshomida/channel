@@ -47,6 +47,20 @@ unsubscribe();
 channel.close();
 ```
 
+## Worker Transports
+
+Worker transports are available as subpath exports.
+
+```ts
+import { createTransport } from "@blazeshomida/channel/worker/client";
+```
+
+```ts
+import { createTransport } from "@blazeshomida/channel/worker/host";
+```
+
+Use the client transport on the main thread and the host transport inside the worker.
+
 ## API
 
 ### `createChannel(transport)`
@@ -57,6 +71,8 @@ A channel can send messages, subscribe to messages, expose closed state, and clo
 
 Calling `send` or `subscribe` after `close` throws.
 
-## Guide
+## Guides
 
 See [Channel](./docs/channel.md) for lifecycle behavior, send options, inbound/outbound typing, and runtime boundary notes.
+
+See [Workers](./docs/workers.md) for worker client and host transport usage.
