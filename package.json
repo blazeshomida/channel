@@ -4,10 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp run -r test && vp run -r build",
-    "dev": "vp run website#dev"
+    "check": "vp check",
+    "test": "vp run -r test",
+    "build": "vp run -r build",
+    "pack": "vp run @blazeshomida/channel#pack",
+    "dev:package": "vp run @blazeshomida/channel#dev",
+    "ready": "vp check && vp run -r test && vp run -r build"
   },
   "devDependencies": {
+    "typescript": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {
