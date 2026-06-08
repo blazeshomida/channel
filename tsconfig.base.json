@@ -1,16 +1,71 @@
 {
   "compilerOptions": {
+    // -------------------------------------------------------------------------
+    // Runtime environment
+    // -------------------------------------------------------------------------
+
     "target": "ES2022",
+    "lib": ["ES2022"],
+
+    // -------------------------------------------------------------------------
+    // Module system
+    // -------------------------------------------------------------------------
+
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022"],
-    "strict": true,
-    "noEmit": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "moduleDetection": "force",
+
+    // -------------------------------------------------------------------------
+    // Strict mode
+    // -------------------------------------------------------------------------
+
+    "strict": true,
+
+    // Included by strict:
+    // "alwaysStrict": true,
+    // "noImplicitAny": true,
+    // "noImplicitThis": true,
+    // "strictBindCallApply": true,
+    // "strictBuiltinIteratorReturn": true,
+    // "strictFunctionTypes": true,
+    // "strictNullChecks": true,
+    // "strictPropertyInitialization": true,
+    // "useUnknownInCatchVariables": true,
+
+    // -------------------------------------------------------------------------
+    // Extra correctness checks
+    // -------------------------------------------------------------------------
+
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
     "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
+
+    // Uncomment if every function should explicitly return on all paths.
+    // "noImplicitReturns": true,
+
+    // -------------------------------------------------------------------------
+    // Unused code checks
+    // -------------------------------------------------------------------------
+
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    // -------------------------------------------------------------------------
+    // Emit
+    // -------------------------------------------------------------------------
+
+    "noEmit": true,
+
+    // -------------------------------------------------------------------------
+    // Type checking performance
+    // -------------------------------------------------------------------------
+
     "skipLibCheck": true
   }
 }
