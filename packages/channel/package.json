@@ -3,13 +3,29 @@
   "version": "0.0.0",
   "private": true,
   "description": "A typed message channel for workers and other transports.",
+  "keywords": [],
+  "homepage": "https://github.com/blazeshomida/channel#readme",
+  "bugs": {
+    "url": "https://github.com/blazeshomida/channel/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blazeshomida/channel.git",
+    "directory": "packages/channel"
+  },
   "files": [
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": "./dist/index.mjs",
     "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "vp pack",
