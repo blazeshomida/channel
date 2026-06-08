@@ -115,11 +115,27 @@ export default defineConfig({
         cache: false,
       },
 
+      "task:vanilla-workers:build": {
+        command: "vp build",
+        cwd: "playgrounds/vanilla-workers",
+        dependsOn: ["task:channel:pack"],
+        input: workspaceInput(workspacePattern("packages/channel/dist/**")),
+        output: workspaceOutput("playgrounds/vanilla-workers/dist/**"),
+      },
+
+      "task:vanilla-workers:dev": {
+        command: "vp dev",
+        cwd: "playgrounds/vanilla-workers",
+        dependsOn: ["task:channel:pack"],
+        cache: false,
+      },
+
       "task:ready": {
         command: [
           "vp run task:workspace:check",
           "vp run task:channel:test",
           "vp run task:vanilla:build",
+          "vp run task:vanilla-workers:build",
         ],
       },
     },

@@ -1,8 +1,9 @@
 # @blazeshomida/channel
 
-Typed message channel primitives for workers and other transports.
+> [!WARNING]
+> This package is unstable while the API is being explored. It is currently private and may change without a migration path.
 
-This package is private while the API is being explored.
+Typed message channel primitives for workers and other transports.
 
 ## Usage
 

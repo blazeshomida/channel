@@ -2,6 +2,9 @@
 
 Workspace for `@blazeshomida/channel`.
 
+> [!WARNING]
+> This workspace is unstable while the package API is being explored. Expect breaking changes between commits until the package is marked ready for external use.
+
 `@blazeshomida/channel` is a typed message channel for workers and other transports. The package is currently private while the API is being explored.
 
 ## Workspace
@@ -12,6 +15,7 @@ packages/
 
 playgrounds/
   vanilla/
+  vanilla-workers/
 ```
 
 ## Requirements
@@ -42,6 +46,12 @@ Run the vanilla playground:
 vp run dev:vanilla
 ```
 
+Run the worker playground:
+
+```sh
+vp run dev:vanilla-workers
+```
+
 Run the package build watcher:
 
 ```sh
@@ -58,6 +68,12 @@ Build the vanilla playground:
 
 ```sh
 vp run build
+```
+
+Build the worker playground:
+
+```sh
+vp run build:vanilla-workers
 ```
 
 Run package tests:
@@ -86,13 +102,13 @@ Package build output is generated in:
 packages/channel/dist
 ```
 
-The vanilla playground imports the package through the workspace package name:
+The playgrounds import the package through the workspace package name:
 
 ```ts
 import { createChannel } from "@blazeshomida/channel";
 ```
 
-This keeps the playground close to how an external consumer will use the package.
+This keeps the playgrounds close to how an external consumer will use the package.
 
 ## Task graph
 
@@ -104,23 +120,27 @@ flowchart TD
   workspaceCheck["task:workspace:check<br/>Run workspace checks"]
   channelTest["task:channel:test<br/>Run package tests"]
   vanillaBuild["task:vanilla:build<br/>Build vanilla playground"]
+  vanillaWorkersBuild["task:vanilla-workers:build<br/>Build worker playground"]
   ready["task:ready<br/>Run full verification workflow"]
 
   channelPack --> workspaceCheck
   channelPack --> vanillaBuild
+  channelPack --> vanillaWorkersBuild
 
   workspaceCheck --> ready
   channelTest --> ready
   vanillaBuild --> ready
+  vanillaWorkersBuild --> ready
 ```
 
-`task:channel:pack` runs before workspace checks and playground builds so the vanilla playground can resolve the package through its built `dist` output.
+`task:channel:pack` runs before workspace checks and playground builds so the playgrounds can resolve the package through its built `dist` output.
 
 `task:ready` runs:
 
 1. `task:workspace:check`
 2. `task:channel:test`
 3. `task:vanilla:build`
+4. `task:vanilla-workers:build`
 
 ## Changesets
 
@@ -159,4 +179,4 @@ To enable publishing later:
 
 ## Status
 
-This workspace is release-ready infrastructure for an API that is still being designed. The next implementation milestone is the channel runtime: transport primitives, worker adapters, and a worker round trip in the vanilla playground.
+This workspace is release-ready infrastructure for an API that is still being designed. The current implementation includes channel primitives and worker transports. The next implementation milestone is a higher-level peer layer for request / response, events, errors, cancellation, and streams.
