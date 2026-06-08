@@ -13,6 +13,8 @@
     "ready": "vp run task:ready"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "catalog:",
+    "@changesets/cli": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"
   },
