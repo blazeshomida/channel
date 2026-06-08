@@ -10,6 +10,9 @@
     "test": "vp run task:channel:test",
     "build": "vp run task:vanilla:build",
     "pack": "vp run task:channel:pack",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "vp run ready && changeset publish",
     "ready": "vp run task:ready"
   },
   "devDependencies": {
