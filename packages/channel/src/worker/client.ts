@@ -1,5 +1,5 @@
 import type { Transport } from "../transport";
-import { createWorkerTransport } from "./transport";
+import { createWorkerTransport } from "./_transport";
 import type { WorkerClientTarget, WorkerSendOptions } from "./types";
 
 /**
