@@ -5,8 +5,10 @@ import {
   createPeerClosedError,
   createPeerError,
   createRequestFailedError,
-} from "./errors";
-import { createHandlerRegistry } from "./handlers";
+} from "./_errors";
+import { createHandlerRegistry } from "./_handlers";
+import { createNotificationRegistry } from "./_notifications";
+import { createPendingRequestRegistry, createRequestIdFactory } from "./_requests";
 import {
   isNotificationMessage,
   isRequestMessage,
@@ -16,8 +18,6 @@ import {
   type PeerRequestMessage,
   type PeerResponseMessage,
 } from "./messages";
-import { createNotificationRegistry } from "./notifications";
-import { createPendingRequestRegistry, createRequestIdFactory } from "./requests";
 import type {
   CreatePeerOptions,
   Peer,
