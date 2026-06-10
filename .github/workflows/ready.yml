@@ -5,15 +5,20 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ready-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   ready:
     name: Ready
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -28,16 +33,19 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Cache Vite+ task cache
+      - name: Cache Vite+ task cache and build output
         uses: actions/cache@v5
         with:
           path: |
             node_modules/.vite
             node_modules/.vite-temp
-          key: vite-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+            packages/channel/dist
+            playgrounds/vanilla/dist
+            playgrounds/vanilla-workers/dist
+          key: vite-plus-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: |
-            vite-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
-            vite-task-${{ runner.os }}-
+            vite-plus-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            vite-plus-task-${{ runner.os }}-
 
       - name: Run ready checks
         run: vp run ready
