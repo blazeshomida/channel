@@ -1,4 +1,5 @@
 import type { Transport } from "../transport";
+import { createWorkerTransport } from "./transport";
 import type { WorkerHostTarget, WorkerSendOptions } from "./types";
 
 /**
@@ -17,25 +18,7 @@ import type { WorkerHostTarget, WorkerSendOptions } from "./types";
 export function createTransport<TInbound = unknown, TOutbound = TInbound>(
   target: WorkerHostTarget<TInbound, TOutbound>,
 ): Transport<TInbound, TOutbound, WorkerSendOptions> {
-  return {
-    send(message, options) {
-      target.postMessage(message, [...(options?.transfer ?? [])]);
-    },
-
-    subscribe(listener) {
-      const handleMessage = (event: MessageEvent<TInbound>) => {
-        listener(event.data);
-      };
-
-      target.addEventListener("message", handleMessage);
-
-      return () => {
-        target.removeEventListener("message", handleMessage);
-      };
-    },
-
-    close() {
-      target.close?.();
-    },
-  };
+  return createWorkerTransport(target, {
+    close: () => target.close?.(),
+  });
 }
