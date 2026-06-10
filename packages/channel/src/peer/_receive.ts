@@ -1,0 +1,174 @@
+import { reportError, type PeerContext } from "./_context";
+import { createMethodNotFoundError, createPeerError, createRequestFailedError } from "./_errors";
+import { send } from "./_send";
+import {
+  isNotificationMessage,
+  isRequestMessage,
+  isResponseMessage,
+  type PeerMessage,
+  type PeerNotificationMessage,
+  type PeerRequestMessage,
+  type PeerResponseMessage,
+} from "./messages";
+
+interface ReceiveArgs<TSendOptions> {
+  context: PeerContext<TSendOptions>;
+  message: PeerMessage;
+}
+
+interface HandleResponseArgs<TSendOptions> {
+  context: PeerContext<TSendOptions>;
+  message: PeerResponseMessage;
+}
+
+interface HandleRequestArgs<TSendOptions> {
+  context: PeerContext<TSendOptions>;
+  message: PeerRequestMessage;
+}
+
+interface HandleNotificationArgs<TSendOptions> {
+  context: PeerContext<TSendOptions>;
+  message: PeerNotificationMessage;
+}
+
+function handleResponse<TSendOptions>({
+  context,
+  message,
+}: HandleResponseArgs<TSendOptions>): void {
+  const pendingRequest = context.pendingRequests.get(message.id);
+
+  if (!pendingRequest) {
+    reportError({
+      context,
+      error: createPeerError("REQUEST_FAILED", `No pending request for response "${message.id}".`),
+      errorContext: {
+        type: "response",
+        id: message.id,
+      },
+    });
+
+    return;
+  }
+
+  context.pendingRequests.delete(message.id);
+
+  if (message.ok) {
+    pendingRequest.resolve(message.payload);
+    return;
+  }
+
+  reportError({
+    context,
+    error: message.error,
+    errorContext: {
+      type: "request",
+      id: message.id,
+      name: pendingRequest.name,
+    },
+    onError: pendingRequest.onError,
+  });
+
+  pendingRequest.reject(message.error);
+}
+
+async function handleRequest<TSendOptions>({
+  context,
+  message,
+}: HandleRequestArgs<TSendOptions>): Promise<void> {
+  const registeredHandler = context.handlers.get(message.name);
+
+  if (!registeredHandler) {
+    send({
+      context,
+      message: {
+        type: "response",
+        id: message.id,
+        ok: false,
+        error: createMethodNotFoundError(message.name),
+      },
+    });
+
+    return;
+  }
+
+  try {
+    const payload = await registeredHandler.handler(message.payload, {
+      id: message.id,
+      name: message.name,
+    });
+
+    send({
+      context,
+      message: {
+        type: "response",
+        id: message.id,
+        ok: true,
+        payload,
+      },
+    });
+  } catch (error) {
+    const responseError = createRequestFailedError(error);
+
+    reportError({
+      context,
+      error: responseError,
+      errorContext: {
+        type: "handler",
+        id: message.id,
+        name: message.name,
+      },
+      onError: registeredHandler.onError,
+    });
+
+    send({
+      context,
+      message: {
+        type: "response",
+        id: message.id,
+        ok: false,
+        error: responseError,
+      },
+    });
+  }
+}
+
+function handleNotification<TSendOptions>({
+  context,
+  message,
+}: HandleNotificationArgs<TSendOptions>): void {
+  context.notifications.emit(
+    message.name,
+    message.payload,
+    (listener, payload, notificationContext) => {
+      try {
+        listener.listener(payload, notificationContext);
+      } catch (error) {
+        reportError({
+          context,
+          error,
+          errorContext: {
+            type: "notification",
+            name: message.name,
+          },
+          onError: listener.onError,
+        });
+      }
+    },
+  );
+}
+
+export function receive<TSendOptions>({ context, message }: ReceiveArgs<TSendOptions>): void {
+  if (isResponseMessage(message)) {
+    handleResponse({ context, message });
+    return;
+  }
+
+  if (isRequestMessage(message)) {
+    void handleRequest({ context, message });
+    return;
+  }
+
+  if (isNotificationMessage(message)) {
+    handleNotification({ context, message });
+  }
+}
