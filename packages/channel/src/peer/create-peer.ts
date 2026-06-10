@@ -1,130 +1,34 @@
-import type { Channel } from "./channel";
-import type { TransportSendArgs } from "./transport";
-
-export type PeerErrorCode = "METHOD_NOT_FOUND" | "REQUEST_FAILED" | "PEER_CLOSED";
-
-export interface PeerErrorPayload {
-  code: PeerErrorCode;
-  message: string;
-  data?: unknown;
-}
-
-export type PeerErrorContext =
-  | { type: "request"; id: number; name: string }
-  | { type: "handler"; id: number; name: string }
-  | { type: "notification"; name: string }
-  | { type: "response"; id: number };
-
-export type PeerErrorHandler = (error: unknown, context: PeerErrorContext) => void;
-
-export interface PeerRequestMessage {
-  type: "request";
-  id: number;
-  name: string;
-  payload: unknown;
-}
-
-export type PeerResponseMessage = PeerSuccessResponseMessage | PeerErrorResponseMessage;
-
-export interface PeerSuccessResponseMessage {
-  type: "response";
-  id: number;
-  ok: true;
-  payload: unknown;
-}
-
-export interface PeerErrorResponseMessage {
-  type: "response";
-  id: number;
-  ok: false;
-  error: PeerErrorPayload;
-}
-
-export interface PeerNotificationMessage {
-  type: "notification";
-  name: string;
-  payload: unknown;
-}
-
-export type PeerMessage = PeerRequestMessage | PeerResponseMessage | PeerNotificationMessage;
-
-export interface PeerRequestOptions<TPayload, TSendOptions> {
-  name: string;
-  payload: TPayload;
-  send?: TSendOptions;
-  onError?: PeerErrorHandler;
-}
-
-export interface PeerNotifyOptions<TPayload, TSendOptions> {
-  name: string;
-  payload: TPayload;
-  send?: TSendOptions;
-  onError?: PeerErrorHandler;
-}
-
-export interface PeerHandleContext {
-  id: number;
-  name: string;
-}
-
-export interface PeerNotificationContext {
-  name: string;
-}
-
-export type PeerHandler<TPayload, TResult> = (
-  payload: TPayload,
-  context: PeerHandleContext,
-) => TResult | Promise<TResult>;
-
-export type PeerNotificationListener<TPayload> = (
-  payload: TPayload,
-  context: PeerNotificationContext,
-) => void;
-
-export interface PeerHandleOptions<TPayload, TResult> {
-  name: string;
-  handler: PeerHandler<TPayload, TResult>;
-  onError?: PeerErrorHandler;
-}
-
-export interface PeerOnOptions<TPayload> {
-  name: string;
-  listener: PeerNotificationListener<TPayload>;
-  onError?: PeerErrorHandler;
-}
-
-export interface PeerOnceOptions<TPayload> {
-  name: string;
-  listener: PeerNotificationListener<TPayload>;
-  onError?: PeerErrorHandler;
-}
-
-export interface CreatePeerOptions<TSendOptions = void> {
-  channel: Channel<PeerMessage, PeerMessage, TSendOptions>;
-  onError?: PeerErrorHandler;
-}
-
-export type PeerDispose = () => void;
-
-export interface Peer<TSendOptions = void> {
-  request<TPayload = unknown, TResult = unknown>(
-    options: PeerRequestOptions<TPayload, TSendOptions>,
-  ): Promise<TResult>;
-
-  handle<TPayload = unknown, TResult = unknown>(
-    options: PeerHandleOptions<TPayload, TResult>,
-  ): PeerDispose;
-
-  hasHandler(name: string): boolean;
-
-  notify<TPayload = unknown>(options: PeerNotifyOptions<TPayload, TSendOptions>): void;
-
-  on<TPayload = unknown>(options: PeerOnOptions<TPayload>): PeerDispose;
-
-  once<TPayload = unknown>(options: PeerOnceOptions<TPayload>): PeerDispose;
-
-  close(): void;
-}
+import type { Channel } from "../channel";
+import type { TransportSendArgs } from "../transport";
+import {
+  createMethodNotFoundError,
+  createPeerClosedError,
+  createPeerError,
+  createRequestFailedError,
+} from "./errors";
+import {
+  isNotificationMessage,
+  isRequestMessage,
+  isResponseMessage,
+  type PeerMessage,
+  type PeerNotificationMessage,
+  type PeerRequestMessage,
+  type PeerResponseMessage,
+} from "./messages";
+import type {
+  CreatePeerOptions,
+  Peer,
+  PeerErrorContext,
+  PeerErrorHandler,
+  PeerErrorPayload,
+  PeerHandleOptions,
+  PeerHandler,
+  PeerNotificationListener,
+  PeerNotifyOptions,
+  PeerOnOptions,
+  PeerOnceOptions,
+  PeerRequestOptions,
+} from "./types";
 
 interface PendingRequest<TResult> {
   name: string;
@@ -142,38 +46,6 @@ interface RegisteredNotificationListener {
   listener: PeerNotificationListener<unknown>;
   onError: PeerErrorHandler | undefined;
   once: boolean;
-}
-
-function createPeerError(code: PeerErrorCode, message: string, data?: unknown): PeerErrorPayload {
-  return data === undefined ? { code, message } : { code, message, data };
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function createRequestFailedError(error: unknown): PeerErrorPayload {
-  return createPeerError("REQUEST_FAILED", getErrorMessage(error));
-}
-
-function createPeerClosedError(): PeerErrorPayload {
-  return createPeerError("PEER_CLOSED", "Peer is closed.");
-}
-
-function createMethodNotFoundError(name: string): PeerErrorPayload {
-  return createPeerError("METHOD_NOT_FOUND", `No handler registered for "${name}".`);
-}
-
-function isResponseMessage(message: PeerMessage): message is PeerResponseMessage {
-  return message.type === "response";
-}
-
-function isRequestMessage(message: PeerMessage): message is PeerRequestMessage {
-  return message.type === "request";
-}
-
-function isNotificationMessage(message: PeerMessage): message is PeerNotificationMessage {
-  return message.type === "notification";
 }
 
 function createRequestIdFactory() {
