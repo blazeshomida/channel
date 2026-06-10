@@ -51,6 +51,21 @@ function createTestPeer() {
   };
 }
 
+function createTestPeerWithOptions(options: Omit<Parameters<typeof createPeer>[0], "channel">) {
+  const transport = new TestPeerTransport();
+  const channel = createChannel(transport);
+  const peer = createPeer({
+    channel,
+    ...options,
+  });
+
+  return {
+    channel,
+    peer,
+    transport,
+  };
+}
+
 test("sends request messages with default numeric ids", () => {
   const { peer, transport } = createTestPeer();
 
@@ -434,4 +449,272 @@ test("close is idempotent", () => {
   peer.close();
 
   expect(transport.closed).toBe(true);
+});
+
+test("sends notification messages", () => {
+  const { peer, transport } = createTestPeer();
+
+  peer.notify({
+    name: "log.info",
+    payload: {
+      message: "hello",
+    },
+  });
+
+  expect(transport.sent).toEqual([
+    {
+      type: "notification",
+      name: "log.info",
+      payload: {
+        message: "hello",
+      },
+    },
+  ]);
+});
+
+test("calls notification listeners", () => {
+  const { peer, transport } = createTestPeer();
+  const received: string[] = [];
+
+  peer.on<{ message: string }>({
+    name: "log.info",
+    listener(payload, context) {
+      received.push(`${context.name}: ${payload.message}`);
+    },
+  });
+
+  transport.emit({
+    type: "notification",
+    name: "log.info",
+    payload: {
+      message: "hello",
+    },
+  });
+
+  expect(received).toEqual(["log.info: hello"]);
+});
+
+test("supports multiple notification listeners", () => {
+  const { peer, transport } = createTestPeer();
+  const received: string[] = [];
+
+  peer.on<{ message: string }>({
+    name: "log.info",
+    listener(payload) {
+      received.push(`first: ${payload.message}`);
+    },
+  });
+
+  peer.on<{ message: string }>({
+    name: "log.info",
+    listener(payload) {
+      received.push(`second: ${payload.message}`);
+    },
+  });
+
+  transport.emit({
+    type: "notification",
+    name: "log.info",
+    payload: {
+      message: "hello",
+    },
+  });
+
+  expect(received).toEqual(["first: hello", "second: hello"]);
+});
+
+test("supports once notification listeners", () => {
+  const { peer, transport } = createTestPeer();
+  const received: string[] = [];
+
+  peer.once<{ message: string }>({
+    name: "ready",
+    listener(payload) {
+      received.push(payload.message);
+    },
+  });
+
+  transport.emit({
+    type: "notification",
+    name: "ready",
+    payload: {
+      message: "first",
+    },
+  });
+
+  transport.emit({
+    type: "notification",
+    name: "ready",
+    payload: {
+      message: "second",
+    },
+  });
+
+  expect(received).toEqual(["first"]);
+});
+
+test("listener dispose functions are idempotent", () => {
+  const { peer, transport } = createTestPeer();
+  const received: string[] = [];
+
+  const dispose = peer.on<{ message: string }>({
+    name: "log.info",
+    listener(payload) {
+      received.push(payload.message);
+    },
+  });
+
+  dispose();
+  dispose();
+
+  transport.emit({
+    type: "notification",
+    name: "log.info",
+    payload: {
+      message: "hello",
+    },
+  });
+
+  expect(received).toEqual([]);
+});
+
+test("calls listener onError before root onError", () => {
+  const errors: string[] = [];
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(error, context) {
+      errors.push(`root:${context.type}:${String(error)}`);
+    },
+  });
+
+  peer.on({
+    name: "log.info",
+    listener() {
+      throw new Error("Listener failed.");
+    },
+    onError(error, context) {
+      errors.push(`local:${context.type}:${(error as Error).message}`);
+    },
+  });
+
+  transport.emit({
+    type: "notification",
+    name: "log.info",
+    payload: null,
+  });
+
+  expect(errors).toEqual([
+    "local:notification:Listener failed.",
+    "root:notification:Error: Listener failed.",
+  ]);
+});
+
+test("routes unknown response ids to root onError", () => {
+  const errors: Array<{
+    error: unknown;
+    context: unknown;
+  }> = [];
+
+  const { transport } = createTestPeerWithOptions({
+    onError(error, context) {
+      errors.push({ error, context });
+    },
+  });
+
+  transport.emit({
+    type: "response",
+    id: 999,
+    ok: true,
+    payload: "late",
+  });
+
+  expect(errors).toEqual([
+    {
+      error: {
+        code: "REQUEST_FAILED",
+        message: 'No pending request for response "999".',
+      },
+      context: {
+        type: "response",
+        id: 999,
+      },
+    },
+  ]);
+});
+
+test("calls request onError before root onError for error responses", async () => {
+  const errors: string[] = [];
+
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(error, context) {
+      errors.push(`root:${context.type}:${(error as { message: string }).message}`);
+    },
+  });
+
+  const promise = peer.request<null, string>({
+    name: "task.fail",
+    payload: null,
+    onError(error, context) {
+      errors.push(`local:${context.type}:${(error as { message: string }).message}`);
+    },
+  });
+
+  transport.emit({
+    type: "response",
+    id: 1,
+    ok: false,
+    error: {
+      code: "REQUEST_FAILED",
+      message: "Remote failed.",
+    },
+  });
+
+  await expect(promise).rejects.toMatchObject({
+    code: "REQUEST_FAILED",
+    message: "Remote failed.",
+  });
+
+  expect(errors).toEqual(["local:request:Remote failed.", "root:request:Remote failed."]);
+});
+
+test("calls handler onError before root onError for handler failures", async () => {
+  const errors: string[] = [];
+
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(error, context) {
+      errors.push(`root:${context.type}:${(error as { message: string }).message}`);
+    },
+  });
+
+  peer.handle({
+    name: "task.fail",
+    handler() {
+      throw new Error("Handler failed.");
+    },
+    onError(error, context) {
+      errors.push(`local:${context.type}:${(error as { message: string }).message}`);
+    },
+  });
+
+  transport.emit({
+    type: "request",
+    id: 1,
+    name: "task.fail",
+    payload: null,
+  });
+
+  await Promise.resolve();
+
+  expect(errors).toEqual(["local:handler:Handler failed.", "root:handler:Handler failed."]);
+
+  expect(transport.sent).toEqual([
+    {
+      type: "response",
+      id: 1,
+      ok: false,
+      error: {
+        code: "REQUEST_FAILED",
+        message: "Handler failed.",
+      },
+    },
+  ]);
 });

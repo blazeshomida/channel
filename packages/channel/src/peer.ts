@@ -9,6 +9,14 @@ export interface PeerErrorPayload {
   data?: unknown;
 }
 
+export type PeerErrorContext =
+  | { type: "request"; id: number; name: string }
+  | { type: "handler"; id: number; name: string }
+  | { type: "notification"; name: string }
+  | { type: "response"; id: number };
+
+export type PeerErrorHandler = (error: unknown, context: PeerErrorContext) => void;
+
 export interface PeerRequestMessage {
   type: "request";
   id: number;
@@ -32,16 +40,34 @@ export interface PeerErrorResponseMessage {
   error: PeerErrorPayload;
 }
 
-export type PeerMessage = PeerRequestMessage | PeerResponseMessage;
+export interface PeerNotificationMessage {
+  type: "notification";
+  name: string;
+  payload: unknown;
+}
+
+export type PeerMessage = PeerRequestMessage | PeerResponseMessage | PeerNotificationMessage;
 
 export interface PeerRequestOptions<TPayload, TSendOptions> {
   name: string;
   payload: TPayload;
   send?: TSendOptions;
+  onError?: PeerErrorHandler;
+}
+
+export interface PeerNotifyOptions<TPayload, TSendOptions> {
+  name: string;
+  payload: TPayload;
+  send?: TSendOptions;
+  onError?: PeerErrorHandler;
 }
 
 export interface PeerHandleContext {
   id: number;
+  name: string;
+}
+
+export interface PeerNotificationContext {
   name: string;
 }
 
@@ -50,13 +76,32 @@ export type PeerHandler<TPayload, TResult> = (
   context: PeerHandleContext,
 ) => TResult | Promise<TResult>;
 
+export type PeerNotificationListener<TPayload> = (
+  payload: TPayload,
+  context: PeerNotificationContext,
+) => void;
+
 export interface PeerHandleOptions<TPayload, TResult> {
   name: string;
   handler: PeerHandler<TPayload, TResult>;
+  onError?: PeerErrorHandler;
+}
+
+export interface PeerOnOptions<TPayload> {
+  name: string;
+  listener: PeerNotificationListener<TPayload>;
+  onError?: PeerErrorHandler;
+}
+
+export interface PeerOnceOptions<TPayload> {
+  name: string;
+  listener: PeerNotificationListener<TPayload>;
+  onError?: PeerErrorHandler;
 }
 
 export interface CreatePeerOptions<TSendOptions = void> {
   channel: Channel<PeerMessage, PeerMessage, TSendOptions>;
+  onError?: PeerErrorHandler;
 }
 
 export type PeerDispose = () => void;
@@ -72,12 +117,31 @@ export interface Peer<TSendOptions = void> {
 
   hasHandler(name: string): boolean;
 
+  notify<TPayload = unknown>(options: PeerNotifyOptions<TPayload, TSendOptions>): void;
+
+  on<TPayload = unknown>(options: PeerOnOptions<TPayload>): PeerDispose;
+
+  once<TPayload = unknown>(options: PeerOnceOptions<TPayload>): PeerDispose;
+
   close(): void;
 }
 
 interface PendingRequest<TResult> {
+  name: string;
+  onError: PeerErrorHandler | undefined;
   resolve(value: TResult): void;
   reject(reason: PeerErrorPayload): void;
+}
+
+interface RegisteredHandler {
+  handler: PeerHandler<unknown, unknown>;
+  onError: PeerErrorHandler | undefined;
+}
+
+interface RegisteredNotificationListener {
+  listener: PeerNotificationListener<unknown>;
+  onError: PeerErrorHandler | undefined;
+  once: boolean;
 }
 
 function createPeerError(code: PeerErrorCode, message: string, data?: unknown): PeerErrorPayload {
@@ -108,6 +172,10 @@ function isRequestMessage(message: PeerMessage): message is PeerRequestMessage {
   return message.type === "request";
 }
 
+function isNotificationMessage(message: PeerMessage): message is PeerNotificationMessage {
+  return message.type === "notification";
+}
+
 function createRequestIdFactory() {
   let previousId = 0;
 
@@ -130,12 +198,18 @@ function sendPeerMessage<TSendOptions>(
 export function createPeer<TSendOptions = void>(
   options: CreatePeerOptions<TSendOptions>,
 ): Peer<TSendOptions> {
-  const { channel } = options;
+  const { channel, onError } = options;
   const getRequestId = createRequestIdFactory();
   const pendingRequests = new Map<number, PendingRequest<unknown>>();
-  const handlers = new Map<string, PeerHandler<unknown, unknown>>();
+  const handlers = new Map<string, RegisteredHandler>();
+  const notificationListeners = new Map<string, Set<RegisteredNotificationListener>>();
 
   let closed = false;
+
+  function reportError(error: unknown, context: PeerErrorContext, localOnError?: PeerErrorHandler) {
+    localOnError?.(error, context);
+    onError?.(error, context);
+  }
 
   function assertOpen() {
     if (closed) {
@@ -159,6 +233,14 @@ export function createPeer<TSendOptions = void>(
     const pendingRequest = pendingRequests.get(message.id);
 
     if (!pendingRequest) {
+      reportError(
+        createPeerError("REQUEST_FAILED", `No pending request for response "${message.id}".`),
+        {
+          type: "response",
+          id: message.id,
+        },
+      );
+
       return;
     }
 
@@ -169,13 +251,23 @@ export function createPeer<TSendOptions = void>(
       return;
     }
 
+    reportError(
+      message.error,
+      {
+        type: "request",
+        id: message.id,
+        name: pendingRequest.name,
+      },
+      pendingRequest.onError,
+    );
+
     pendingRequest.reject(message.error);
   }
 
   async function handleRequest(message: PeerRequestMessage) {
-    const handler = handlers.get(message.name);
+    const registeredHandler = handlers.get(message.name);
 
-    if (!handler) {
+    if (!registeredHandler) {
       send({
         type: "response",
         id: message.id,
@@ -187,7 +279,7 @@ export function createPeer<TSendOptions = void>(
     }
 
     try {
-      const payload = await handler(message.payload, {
+      const payload = await registeredHandler.handler(message.payload, {
         id: message.id,
         name: message.name,
       });
@@ -199,12 +291,63 @@ export function createPeer<TSendOptions = void>(
         payload,
       });
     } catch (error) {
+      const responseError = createRequestFailedError(error);
+
+      reportError(
+        responseError,
+        {
+          type: "handler",
+          id: message.id,
+          name: message.name,
+        },
+        registeredHandler.onError,
+      );
+
       send({
         type: "response",
         id: message.id,
         ok: false,
-        error: createRequestFailedError(error),
+        error: responseError,
       });
+    }
+  }
+
+  function handleNotification(message: PeerNotificationMessage) {
+    const listeners = notificationListeners.get(message.name);
+
+    if (!listeners) {
+      return;
+    }
+
+    const activeListeners = Array.from(listeners);
+
+    for (const entry of activeListeners) {
+      if (!listeners.has(entry)) {
+        continue;
+      }
+
+      if (entry.once) {
+        listeners.delete(entry);
+      }
+
+      try {
+        entry.listener(message.payload, {
+          name: message.name,
+        });
+      } catch (error) {
+        reportError(
+          error,
+          {
+            type: "notification",
+            name: message.name,
+          },
+          entry.onError,
+        );
+      }
+    }
+
+    if (listeners.size === 0) {
+      notificationListeners.delete(message.name);
     }
   }
 
@@ -216,6 +359,11 @@ export function createPeer<TSendOptions = void>(
 
     if (isRequestMessage(message)) {
       void handleRequest(message);
+      return;
+    }
+
+    if (isNotificationMessage(message)) {
+      handleNotification(message);
     }
   });
 
@@ -233,6 +381,8 @@ export function createPeer<TSendOptions = void>(
 
       return new Promise<TResult>((resolve, reject) => {
         pendingRequests.set(id, {
+          name: requestOptions.name,
+          onError: requestOptions.onError,
           resolve: (value) => {
             resolve(value as TResult);
           },
@@ -262,10 +412,10 @@ export function createPeer<TSendOptions = void>(
 
       let active = true;
 
-      const handler: PeerHandler<unknown, unknown> = (payload, context) =>
-        handleOptions.handler(payload as TPayload, context);
-
-      handlers.set(handleOptions.name, handler);
+      handlers.set(handleOptions.name, {
+        handler: (payload, context) => handleOptions.handler(payload as TPayload, context),
+        onError: handleOptions.onError,
+      });
 
       return () => {
         if (!active) {
@@ -279,6 +429,87 @@ export function createPeer<TSendOptions = void>(
 
     hasHandler(name) {
       return handlers.has(name);
+    },
+
+    notify<TPayload = unknown>(notifyOptions: PeerNotifyOptions<TPayload, TSendOptions>) {
+      assertOpen();
+
+      send(
+        {
+          type: "notification",
+          name: notifyOptions.name,
+          payload: notifyOptions.payload,
+        },
+        notifyOptions.send,
+      );
+    },
+
+    on<TPayload = unknown>(onOptions: PeerOnOptions<TPayload>) {
+      assertOpen();
+
+      let active = true;
+
+      const listener: RegisteredNotificationListener = {
+        listener: (payload, context) => onOptions.listener(payload as TPayload, context),
+        onError: onOptions.onError,
+        once: false,
+      };
+
+      let listeners = notificationListeners.get(onOptions.name);
+
+      if (!listeners) {
+        listeners = new Set();
+        notificationListeners.set(onOptions.name, listeners);
+      }
+
+      listeners.add(listener);
+
+      return () => {
+        if (!active) {
+          return;
+        }
+
+        active = false;
+        listeners.delete(listener);
+
+        if (listeners.size === 0) {
+          notificationListeners.delete(onOptions.name);
+        }
+      };
+    },
+
+    once<TPayload = unknown>(onceOptions: PeerOnceOptions<TPayload>) {
+      assertOpen();
+
+      let active = true;
+
+      const listener: RegisteredNotificationListener = {
+        listener: (payload, context) => onceOptions.listener(payload as TPayload, context),
+        onError: onceOptions.onError,
+        once: true,
+      };
+
+      let listeners = notificationListeners.get(onceOptions.name);
+
+      if (!listeners) {
+        listeners = new Set();
+        notificationListeners.set(onceOptions.name, listeners);
+      }
+
+      listeners.add(listener);
+
+      return () => {
+        if (!active) {
+          return;
+        }
+
+        active = false;
+        listeners.delete(listener);
+
+        if (listeners.size === 0) {
+          notificationListeners.delete(onceOptions.name);
+        }
+      };
     },
 
     close() {
@@ -297,6 +528,7 @@ export function createPeer<TSendOptions = void>(
       }
 
       handlers.clear();
+      notificationListeners.clear();
       unsubscribe();
       channel.close();
     },
