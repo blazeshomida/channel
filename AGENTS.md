@@ -37,6 +37,7 @@ packages/
 
 playgrounds/
   vanilla/
+  vanilla-workers/
 ```
 
 ## Repository Commands
@@ -73,6 +74,12 @@ Build the vanilla playground:
 vp run build
 ```
 
+Build the worker playground:
+
+```sh
+vp run build:vanilla-workers
+```
+
 Build the package:
 
 ```sh
@@ -83,6 +90,12 @@ Run the vanilla playground:
 
 ```sh
 vp run dev:vanilla
+```
+
+Run the worker playground:
+
+```sh
+vp run dev:vanilla-workers
 ```
 
 Run the package build watcher:
@@ -113,9 +126,10 @@ Important tasks:
 - `task:workspace:check` depends on `task:channel:pack` and runs workspace checks after package declarations exist.
 - `task:channel:test` runs package tests.
 - `task:vanilla:build` depends on `task:channel:pack` and builds the vanilla playground against package output.
-- `task:ready` runs workspace check, package tests, and playground build.
+- `task:vanilla-workers:build` depends on `task:channel:pack` and builds the worker playground against package output.
+- `task:ready` runs workspace check, package tests, and playground builds.
 
-The vanilla playground imports `@blazeshomida/channel` through the workspace package name. Keep this package-realistic import path unless explicitly asked to test source aliases.
+The playgrounds import `@blazeshomida/channel` through the workspace package name. Keep this package-realistic import path unless explicitly asked to test source aliases.
 
 ## Workflow
 
@@ -261,7 +275,7 @@ Examples:
 - Package behavior change: run `vp run test`.
 - Package public API change: run `vp run ready`.
 - Build config change: run `vp run ready`.
-- Playground change: run `vp run build` or `vp run ready`.
+- Playground change: run `vp run build`, the relevant playground build task, or `vp run ready`.
 - Release workflow or package metadata change: run `vp run ready` and inspect package output when relevant.
 
 For package packing changes, verify the tarball shape when useful:
@@ -292,6 +306,7 @@ Preferred scopes for this repository include:
 
 - `channel`
 - `playgrounds/vanilla`
+- `playgrounds/vanilla-workers`
 - `ci`
 - `release`
 - `changesets`
