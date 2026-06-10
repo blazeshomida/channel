@@ -1,5 +1,7 @@
-import { assertOpen, createContext } from "./_context";
+import { createContext } from "./_context";
 import { createPeerClosedError } from "./_errors";
+import { handle, hasHandler } from "./_handle";
+import { listen, listenOnce } from "./_listen";
 import { notify } from "./_notify";
 import { receive } from "./_receive";
 import { request } from "./_request";
@@ -35,35 +37,20 @@ export function createPeer<TSendOptions = void>(
     handle<TPayload = unknown, TResult = unknown>(
       handleOptions: PeerHandleOptions<TPayload, TResult>,
     ) {
-      assertOpen({ context });
-
-      if (context.handlers.has(handleOptions.name)) {
-        throw new Error(`Handler already registered for "${handleOptions.name}".`);
-      }
-
-      let active = true;
-
-      context.handlers.set(handleOptions.name, {
-        handler: (payload, handlerContext) =>
-          handleOptions.handler(payload as TPayload, handlerContext),
-        onError: handleOptions.onError,
+      return handle<TPayload, TResult, TSendOptions>({
+        context,
+        options: handleOptions,
       });
-
-      return () => {
-        if (!active) {
-          return;
-        }
-
-        active = false;
-        context.handlers.delete(handleOptions.name);
-      };
     },
 
-    hasHandler(name) {
-      return context.handlers.has(name);
+    hasHandler(name: string): boolean {
+      return hasHandler({
+        context,
+        name,
+      });
     },
 
-    notify<TPayload = unknown>(notifyOptions: PeerNotifyOptions<TPayload, TSendOptions>) {
+    notify<TPayload = unknown>(notifyOptions: PeerNotifyOptions<TPayload, TSendOptions>): void {
       notify<TPayload, TSendOptions>({
         context,
         options: notifyOptions,
@@ -71,26 +58,16 @@ export function createPeer<TSendOptions = void>(
     },
 
     on<TPayload = unknown>(onOptions: PeerOnOptions<TPayload>) {
-      assertOpen({ context });
-
-      return context.notifications.add({
-        name: onOptions.name,
-        listener: (payload, notificationContext) =>
-          onOptions.listener(payload as TPayload, notificationContext),
-        onError: onOptions.onError,
-        once: false,
+      return listen<TPayload, TSendOptions>({
+        context,
+        options: onOptions,
       });
     },
 
     once<TPayload = unknown>(onceOptions: PeerOnceOptions<TPayload>) {
-      assertOpen({ context });
-
-      return context.notifications.add({
-        name: onceOptions.name,
-        listener: (payload, notificationContext) =>
-          onceOptions.listener(payload as TPayload, notificationContext),
-        onError: onceOptions.onError,
-        once: true,
+      return listenOnce<TPayload, TSendOptions>({
+        context,
+        options: onceOptions,
       });
     },
 
