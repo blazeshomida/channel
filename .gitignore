@@ -7,17 +7,32 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Build output
 dist
 dist-ssr
+coverage
+
+# Vite+ local cache
+.vite
+.vite-temp
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local files
 *.local
+.DS_Store
 
 # Editor directories and files
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
@@ -26,6 +41,3 @@ dist-ssr
 
 # AI agent worktrees
 .claude/worktrees/
-!.vscode/
-!.vscode/settings.json
-!.vscode/extensions.json
