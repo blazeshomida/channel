@@ -1,0 +1,54 @@
+import type { PeerContext } from "./_context";
+import { createPeerClosedError } from "./_errors";
+import { send } from "./_send";
+import type { PeerRequestOptions } from "./types";
+
+interface RequestArgs<TPayload, TSendOptions> {
+  context: PeerContext<TSendOptions>;
+  options: PeerRequestOptions<TPayload, TSendOptions>;
+}
+
+function rejectIfClosed<TResult, TSendOptions>(
+  context: PeerContext<TSendOptions>,
+): Promise<TResult> | undefined {
+  if (!context.closed) {
+    return undefined;
+  }
+
+  return Promise.reject(createPeerClosedError());
+}
+
+export function request<TPayload = unknown, TResult = unknown, TSendOptions = void>({
+  context,
+  options,
+}: RequestArgs<TPayload, TSendOptions>): Promise<TResult> {
+  const closedPromise = rejectIfClosed<TResult, TSendOptions>(context);
+
+  if (closedPromise) {
+    return closedPromise;
+  }
+
+  const id = context.getRequestId();
+
+  return new Promise<TResult>((resolve, reject) => {
+    context.pendingRequests.set(id, {
+      name: options.name,
+      onError: options.onError,
+      resolve: (value) => {
+        resolve(value as TResult);
+      },
+      reject,
+    });
+
+    send({
+      context,
+      message: {
+        type: "request",
+        id,
+        name: options.name,
+        payload: options.payload,
+      },
+      options: options.send,
+    });
+  });
+}
