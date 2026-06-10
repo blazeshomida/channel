@@ -1,5 +1,5 @@
+import { close } from "./_close";
 import { createContext } from "./_context";
-import { createPeerClosedError } from "./_errors";
 import { handle, hasHandler } from "./_handle";
 import { listen, listenOnce } from "./_listen";
 import { notify } from "./_notify";
@@ -71,18 +71,11 @@ export function createPeer<TSendOptions = void>(
       });
     },
 
-    close() {
-      if (context.closed) {
-        return;
-      }
-
-      context.closed = true;
-
-      context.pendingRequests.rejectAll(createPeerClosedError());
-      context.handlers.clear();
-      context.notifications.clear();
-      unsubscribe();
-      context.channel.close();
+    close(): void {
+      close({
+        context,
+        unsubscribe,
+      });
     },
   };
 }
