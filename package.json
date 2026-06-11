@@ -4,24 +4,28 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "vp run task:vanilla:build",
+    "build:vanilla-workers": "vp run task:vanilla-workers:build",
+    "changeset": "changeset",
+    "check": "vp run task:workspace:check",
     "dev:package": "vp run task:channel:dev",
     "dev:vanilla": "vp run task:vanilla:dev",
     "dev:vanilla-workers": "vp run task:vanilla-workers:dev",
-    "check": "vp run task:workspace:check",
-    "test": "vp run task:channel:test",
-    "build": "vp run task:vanilla:build",
-    "build:vanilla-workers": "vp run task:vanilla-workers:build",
+    "fmt": "vp run task:workspace:fmt",
+    "lint": "vp run task:workspace:lint",
     "pack": "vp run task:channel:pack",
-    "changeset": "changeset",
-    "version": "changeset version",
-    "release": "vp run ready && changeset publish",
-    "ready": "vp run task:ready"
+    "ready": "vp run task:ready",
+    "release": "vp run task:ready && changeset publish",
+    "test": "vp run task:channel:test",
+    "version": "changeset version"
   },
   "devDependencies": {
     "@changesets/changelog-github": "catalog:",
     "@changesets/cli": "catalog:",
     "typescript": "catalog:",
-    "vite-plus": "catalog:"
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=22.12.0"

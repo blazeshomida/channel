@@ -1,11 +1,30 @@
 import type { UserConfig } from "vite-plus";
 
-import { outputPatterns } from "./patterns";
+import { generatedPatterns, localToolPatterns, outputPatterns } from "./patterns";
+
+type FormatConfig = NonNullable<UserConfig["fmt"]>;
 
 export const fmt = {
-  ignorePatterns: outputPatterns,
+  ignorePatterns: [...outputPatterns, ...localToolPatterns, ...generatedPatterns],
 
   sortImports: {
-    internalPattern: ["#/"],
+    customGroups: [
+      {
+        groupName: "project-alias",
+        elementNamePattern: ["#/**"],
+      },
+    ],
+
+    groups: [
+      "type-import",
+      ["value-builtin", "value-external"],
+      "project-alias",
+      ["value-parent", "value-sibling", "value-index"],
+      "unknown",
+    ],
   },
-} satisfies NonNullable<UserConfig["fmt"]>;
+
+  sortPackageJson: {
+    sortScripts: true,
+  },
+} satisfies FormatConfig;
