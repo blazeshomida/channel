@@ -1,4 +1,5 @@
 import type {
+  PeerCancelMessage,
   PeerMessage,
   PeerNotificationMessage,
   PeerRequestMessage,
@@ -12,6 +13,7 @@ import {
   createRequestFailedError,
 } from "../_runtime/errors";
 import {
+  isCancelMessage,
   isNotificationMessage,
   isRequestMessage,
   isResponseMessage,
@@ -38,6 +40,11 @@ interface HandleNotificationArgs<TSendOptions> {
   message: PeerNotificationMessage;
 }
 
+interface HandleCancelArgs<TSendOptions> {
+  context: PeerContext<TSendOptions>;
+  message: PeerCancelMessage;
+}
+
 function handleResponse<TSendOptions>({
   context,
   message,
@@ -45,6 +52,10 @@ function handleResponse<TSendOptions>({
   const pendingRequest = context.pendingRequests.get(message.id);
 
   if (!pendingRequest) {
+    if (context.cancelledRequests.delete(message.id)) {
+      return;
+    }
+
     reportError({
       context,
       error: createPeerError("REQUEST_FAILED", `No pending request for response "${message.id}".`),
@@ -98,11 +109,20 @@ async function handleRequest<TSendOptions>({
     return;
   }
 
+  const activeRequest = context.activeRequests.create(message.id);
+
   try {
     const payload = await registeredHandler.handler(message.payload, {
       id: message.id,
       name: message.name,
+      signal: activeRequest.signal,
     });
+
+    context.activeRequests.delete(message.id);
+
+    if (activeRequest.signal.aborted || context.closed) {
+      return;
+    }
 
     send({
       context,
@@ -114,6 +134,12 @@ async function handleRequest<TSendOptions>({
       },
     });
   } catch (error) {
+    context.activeRequests.delete(message.id);
+
+    if (activeRequest.signal.aborted || context.closed) {
+      return;
+    }
+
     const responseError = createRequestFailedError(error);
 
     reportError({
@@ -164,6 +190,10 @@ function handleNotification<TSendOptions>({
   );
 }
 
+function handleCancel<TSendOptions>({ context, message }: HandleCancelArgs<TSendOptions>): void {
+  context.activeRequests.abort(message.id, message.reason);
+}
+
 export function receive<TSendOptions>({ context, message }: ReceiveArgs<TSendOptions>): void {
   if (isResponseMessage(message)) {
     handleResponse({ context, message });
@@ -177,5 +207,10 @@ export function receive<TSendOptions>({ context, message }: ReceiveArgs<TSendOpt
 
   if (isNotificationMessage(message)) {
     handleNotification({ context, message });
+    return;
+  }
+
+  if (isCancelMessage(message)) {
+    handleCancel({ context, message });
   }
 }

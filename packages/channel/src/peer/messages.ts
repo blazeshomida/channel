@@ -29,4 +29,14 @@ export interface PeerNotificationMessage {
   payload: unknown;
 }
 
-export type PeerMessage = PeerRequestMessage | PeerResponseMessage | PeerNotificationMessage;
+export interface PeerCancelMessage {
+  type: "cancel";
+  id: number;
+  reason?: unknown;
+}
+
+export type PeerMessage =
+  | PeerRequestMessage
+  | PeerResponseMessage
+  | PeerNotificationMessage
+  | PeerCancelMessage;

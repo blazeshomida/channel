@@ -1,7 +1,13 @@
+/// <reference lib="dom" />
+
 import type { Channel } from "../channel";
 import type { PeerMessage } from "./messages";
 
-export type PeerErrorCode = "METHOD_NOT_FOUND" | "REQUEST_FAILED" | "PEER_CLOSED";
+export type PeerErrorCode =
+  | "METHOD_NOT_FOUND"
+  | "REQUEST_FAILED"
+  | "REQUEST_CANCELLED"
+  | "PEER_CLOSED";
 
 export interface PeerErrorPayload {
   code: PeerErrorCode;
@@ -21,6 +27,7 @@ export interface PeerRequestOptions<TPayload, TSendOptions> {
   name: string;
   payload: TPayload;
   send?: TSendOptions;
+  signal?: AbortSignal;
   onError?: PeerErrorHandler;
 }
 
@@ -34,6 +41,7 @@ export interface PeerNotifyOptions<TPayload, TSendOptions> {
 export interface PeerHandleContext {
   id: number;
   name: string;
+  signal: AbortSignal;
 }
 
 export interface PeerNotificationContext {

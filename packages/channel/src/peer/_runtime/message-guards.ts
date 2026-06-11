@@ -1,4 +1,5 @@
 import type {
+  PeerCancelMessage,
   PeerMessage,
   PeerNotificationMessage,
   PeerRequestMessage,
@@ -15,4 +16,8 @@ export function isRequestMessage(message: PeerMessage): message is PeerRequestMe
 
 export function isNotificationMessage(message: PeerMessage): message is PeerNotificationMessage {
   return message.type === "notification";
+}
+
+export function isCancelMessage(message: PeerMessage): message is PeerCancelMessage {
+  return message.type === "cancel";
 }
