@@ -10,6 +10,7 @@ export type {
   PeerErrorPayload,
   PeerHandleContext,
   PeerHandleOptions,
+  PeerHandleStreamOptions,
   PeerHandler,
   PeerNotificationContext,
   PeerNotificationListener,
@@ -17,6 +18,9 @@ export type {
   PeerOnOptions,
   PeerOnceOptions,
   PeerRequestOptions,
+  PeerStream,
+  PeerStreamHandler,
+  PeerStreamOptions,
 } from "./types";
 
 export type {
@@ -25,4 +29,9 @@ export type {
   PeerNotificationMessage,
   PeerRequestMessage,
   PeerResponseMessage,
+  PeerStreamEndMessage,
+  PeerStreamErrorMessage,
+  PeerStreamItemMessage,
+  PeerStreamPullMessage,
+  PeerStreamRequestMessage,
 } from "./messages";

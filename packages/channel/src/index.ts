@@ -12,6 +12,7 @@ export type {
   PeerErrorPayload,
   PeerHandleContext,
   PeerHandleOptions,
+  PeerHandleStreamOptions,
   PeerHandler,
   PeerMessage,
   PeerNotificationContext,
@@ -23,5 +24,13 @@ export type {
   PeerRequestMessage,
   PeerRequestOptions,
   PeerResponseMessage,
+  PeerStream,
+  PeerStreamEndMessage,
+  PeerStreamErrorMessage,
+  PeerStreamHandler,
+  PeerStreamItemMessage,
+  PeerStreamOptions,
+  PeerStreamPullMessage,
+  PeerStreamRequestMessage,
 } from "./peer";
 export type { Transport, TransportListener, TransportSendArgs, Unsubscribe } from "./transport";

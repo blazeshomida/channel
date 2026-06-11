@@ -17,7 +17,19 @@ import {
   isNotificationMessage,
   isRequestMessage,
   isResponseMessage,
+  isStreamEndMessage,
+  isStreamErrorMessage,
+  isStreamItemMessage,
+  isStreamPullMessage,
+  isStreamRequestMessage,
 } from "../_runtime/message-guards";
+import {
+  receiveStreamEnd,
+  receiveStreamError,
+  receiveStreamItem,
+  receiveStreamPull,
+  receiveStreamRequest,
+} from "./receive-stream";
 import { send } from "./send";
 
 interface ReceiveArgs<TSendOptions> {
@@ -192,6 +204,7 @@ function handleNotification<TSendOptions>({
 
 function handleCancel<TSendOptions>({ context, message }: HandleCancelArgs<TSendOptions>): void {
   context.activeRequests.abort(message.id, message.reason);
+  context.activeStreams.abort(message.id, message.reason);
 }
 
 export function receive<TSendOptions>({ context, message }: ReceiveArgs<TSendOptions>): void {
@@ -212,5 +225,30 @@ export function receive<TSendOptions>({ context, message }: ReceiveArgs<TSendOpt
 
   if (isCancelMessage(message)) {
     handleCancel({ context, message });
+    return;
+  }
+
+  if (isStreamRequestMessage(message)) {
+    receiveStreamRequest({ context, message });
+    return;
+  }
+
+  if (isStreamPullMessage(message)) {
+    void receiveStreamPull({ context, message });
+    return;
+  }
+
+  if (isStreamItemMessage(message)) {
+    receiveStreamItem({ context, message });
+    return;
+  }
+
+  if (isStreamEndMessage(message)) {
+    receiveStreamEnd({ context, message });
+    return;
+  }
+
+  if (isStreamErrorMessage(message)) {
+    receiveStreamError({ context, message });
   }
 }
