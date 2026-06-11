@@ -3,6 +3,7 @@ import type { PeerErrorHandler, PeerErrorPayload } from "../types";
 export interface PendingRequest<TResult = unknown> {
   name: string;
   onError: PeerErrorHandler | undefined;
+  cleanup(): void;
   resolve(value: TResult): void;
   reject(reason: unknown): void;
 }
@@ -47,6 +48,7 @@ export function createPendingRequestRegistry(): PendingRequestRegistry {
       requests.clear();
 
       for (const request of pendingRequests) {
+        request.cleanup();
         request.reject(error);
       }
     },

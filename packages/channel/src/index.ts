@@ -4,6 +4,7 @@ export { createPeer } from "./peer";
 export type {
   CreatePeerOptions,
   Peer,
+  PeerCancelMessage,
   PeerDispose,
   PeerErrorCode,
   PeerErrorContext,

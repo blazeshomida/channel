@@ -20,6 +20,7 @@ export type {
 } from "./types";
 
 export type {
+  PeerCancelMessage,
   PeerMessage,
   PeerNotificationMessage,
   PeerRequestMessage,
