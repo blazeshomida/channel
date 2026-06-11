@@ -120,6 +120,51 @@ test("late responses after local cancellation are ignored", async () => {
   expect(errors).toEqual([]);
 });
 
+test("cancelled request tracking is bounded", async () => {
+  const errors: string[] = [];
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(error, context) {
+      errors.push(`${context.type}:${getErrorMessage(error)}`);
+    },
+  });
+  const cancellations: Array<Promise<void>> = [];
+
+  for (let index = 0; index < 1_025; index += 1) {
+    const controller = new AbortController();
+    const promise = peer.request({
+      name: "task.run",
+      payload: index,
+      signal: controller.signal,
+    });
+
+    controller.abort("not needed");
+
+    cancellations.push(
+      expect(promise).rejects.toMatchObject({
+        code: "REQUEST_CANCELLED",
+      }),
+    );
+  }
+
+  await Promise.all(cancellations);
+
+  transport.emit({
+    type: "response",
+    id: 1,
+    ok: true,
+    payload: "done",
+  });
+
+  transport.emit({
+    type: "response",
+    id: 1_025,
+    ok: true,
+    payload: "done",
+  });
+
+  expect(errors).toEqual(['response:No pending request for response "1".']);
+});
+
 test("unknown response ids still report errors", () => {
   const errors: string[] = [];
   const { transport } = createTestPeerWithOptions({
