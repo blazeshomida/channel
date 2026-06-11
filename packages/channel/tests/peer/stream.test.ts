@@ -1,6 +1,9 @@
+import type { PeerMessage } from "../../src/peer/messages";
+
 import { expect, test } from "vite-plus/test";
 
-import { createChannel, createPeer, type PeerMessage, type TransportListener } from "../../src";
+import { createChannel, type TransportListener } from "../../src";
+import { createRawPeer } from "../../src/peer/create-raw-peer";
 import { createTestPeer, createTestPeerWithOptions, getErrorMessage } from "./helpers";
 
 async function flushAsyncWork(): Promise<void> {
@@ -179,7 +182,7 @@ test("handles stream errors delivered synchronously during the initial send", as
       };
     },
   });
-  const peer = createPeer({ channel });
+  const peer = createRawPeer({ channel });
   const stream = peer.stream({
     name: "broken",
     payload: null,

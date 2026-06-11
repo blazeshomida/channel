@@ -1,10 +1,7 @@
-import {
-  createChannel,
-  createPeer,
-  type PeerMessage,
-  type TransportListener,
-  type Unsubscribe,
-} from "../../src";
+import type { PeerMessage } from "../../src/peer/messages";
+
+import { createChannel, type TransportListener, type Unsubscribe } from "../../src";
+import { createRawPeer } from "../../src/peer/create-raw-peer";
 
 export class TestPeerTransport {
   readonly listeners = new Set<TransportListener<PeerMessage>>();
@@ -38,7 +35,7 @@ export class TestPeerTransport {
 export function createTestPeer() {
   const transport = new TestPeerTransport();
   const channel = createChannel(transport);
-  const peer = createPeer({
+  const peer = createRawPeer({
     channel,
   });
 
@@ -50,11 +47,11 @@ export function createTestPeer() {
 }
 
 export function createTestPeerWithOptions(
-  options: Omit<Parameters<typeof createPeer>[0], "channel">,
+  options: Omit<Parameters<typeof createRawPeer>[0], "channel">,
 ) {
   const transport = new TestPeerTransport();
   const channel = createChannel(transport);
-  const peer = createPeer({
+  const peer = createRawPeer({
     channel,
     ...options,
   });
