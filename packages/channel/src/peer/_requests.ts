@@ -1,13 +1,22 @@
 import type { PeerErrorHandler, PeerErrorPayload } from "./types";
 
-export interface PendingRequest<TResult> {
+export interface PendingRequest<TResult = unknown> {
   name: string;
   onError: PeerErrorHandler | undefined;
   resolve(value: TResult): void;
-  reject(reason: PeerErrorPayload): void;
+  reject(reason: unknown): void;
 }
 
-export function createRequestIdFactory() {
+export type RequestIdFactory = () => number;
+
+export interface PendingRequestRegistry {
+  get(id: number): PendingRequest<unknown> | undefined;
+  set(id: number, request: PendingRequest<unknown>): void;
+  delete(id: number): void;
+  rejectAll(error: PeerErrorPayload): void;
+}
+
+export function createRequestIdFactory(): RequestIdFactory {
   let previousId = 0;
 
   return () => {
@@ -16,23 +25,23 @@ export function createRequestIdFactory() {
   };
 }
 
-export function createPendingRequestRegistry() {
+export function createPendingRequestRegistry(): PendingRequestRegistry {
   const requests = new Map<number, PendingRequest<unknown>>();
 
   return {
-    get(id: number) {
+    get(id) {
       return requests.get(id);
     },
 
-    set(id: number, request: PendingRequest<unknown>) {
+    set(id, request) {
       requests.set(id, request);
     },
 
-    delete(id: number) {
+    delete(id) {
       requests.delete(id);
     },
 
-    rejectAll(error: PeerErrorPayload) {
+    rejectAll(error) {
       const pendingRequests = [...requests.values()];
 
       requests.clear();

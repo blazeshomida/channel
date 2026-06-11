@@ -5,23 +5,31 @@ export interface RegisteredHandler {
   onError: PeerErrorHandler | undefined;
 }
 
-export function createHandlerRegistry() {
+export interface HandlerRegistry {
+  get(name: string): RegisteredHandler | undefined;
+  has(name: string): boolean;
+  set(name: string, handler: RegisteredHandler): void;
+  delete(name: string): void;
+  clear(): void;
+}
+
+export function createHandlerRegistry(): HandlerRegistry {
   const handlers = new Map<string, RegisteredHandler>();
 
   return {
-    get(name: string) {
+    get(name) {
       return handlers.get(name);
     },
 
-    has(name: string) {
+    has(name) {
       return handlers.has(name);
     },
 
-    set(name: string, handler: RegisteredHandler) {
+    set(name, handler) {
       handlers.set(name, handler);
     },
 
-    delete(name: string) {
+    delete(name) {
       handlers.delete(name);
     },
 
