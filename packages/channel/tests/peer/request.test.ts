@@ -1,6 +1,9 @@
+import type { PeerMessage } from "../../src/peer/messages";
+
 import { expect, test } from "vite-plus/test";
 
-import { createChannel, createPeer, type PeerMessage } from "../../src";
+import { createChannel } from "../../src";
+import { createRawPeer } from "../../src/peer/create-raw-peer";
 import {
   TestPeerTransport,
   createTestPeer,
@@ -40,7 +43,7 @@ test("forwards send options through request messages", () => {
   const transport = new TestPeerTransport();
 
   const channel = createChannel<PeerMessage, PeerMessage, SendOptions>(transport);
-  const peer = createPeer({ channel });
+  const peer = createRawPeer({ channel });
   const buffer = new ArrayBuffer(8);
 
   void peer.request({
