@@ -12,8 +12,21 @@ export function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function isPeerErrorPayload(error: unknown): error is PeerErrorPayload {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    "message" in error &&
+    typeof error.message === "string"
+  );
+}
+
 export function createRequestFailedError(error: unknown): PeerErrorPayload {
-  return createPeerError("REQUEST_FAILED", getErrorMessage(error));
+  return isPeerErrorPayload(error)
+    ? error
+    : createPeerError("REQUEST_FAILED", getErrorMessage(error));
 }
 
 export function createRequestCancelledError(reason?: unknown): PeerErrorPayload {
@@ -21,7 +34,9 @@ export function createRequestCancelledError(reason?: unknown): PeerErrorPayload 
 }
 
 export function createStreamFailedError(error: unknown): PeerErrorPayload {
-  return createPeerError("STREAM_FAILED", getErrorMessage(error));
+  return isPeerErrorPayload(error)
+    ? error
+    : createPeerError("STREAM_FAILED", getErrorMessage(error));
 }
 
 export function createPeerClosedError(): PeerErrorPayload {
