@@ -4,20 +4,22 @@ on:
   push:
     branches:
       - main
-
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+  workflow_dispatch:
 
 permissions:
   contents: write
-  pull-requests: write
   id-token: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -32,18 +34,20 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Cache Vite+ task cache
+      - name: Cache Vite+ task cache and build output
         uses: actions/cache@v5
         with:
           path: |
             node_modules/.vite
             node_modules/.vite-temp
-          key: vite-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+            packages/*/dist
+            playgrounds/*/dist
+          key: vite-plus-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: |
-            vite-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
-            vite-task-${{ runner.os }}-
+            vite-plus-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            vite-plus-task-${{ runner.os }}-
 
-      - name: Create release pull request or publish
+      - name: Create release pull request or publish packages
         uses: changesets/action@v1
         with:
           version: vp run version

@@ -1,43 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.output/
+build/
+
+# Coverage
+coverage/
+
+# Vite
+.vite/
+.vite-temp/
+
+# TypeScript
+*.tsbuildinfo
+
 # Logs
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
-
-# Dependencies
-node_modules
-
-# Build output
-dist
-dist-ssr
-coverage
-
-# Vite+ local cache
-.vite
-.vite-temp
 
 # Environment files
 .env
 .env.*
 !.env.example
 
-# Local files
-*.local
-.DS_Store
+# Package manager
+.pnpm-store/
 
-# Editor directories and files
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
 .vscode/*
-!.vscode/settings.json
 !.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
 .idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+
+# Local tool/cache output
+.cache/
+.temp/
+tmp/
 
 # AI agent worktrees
 .claude/worktrees/

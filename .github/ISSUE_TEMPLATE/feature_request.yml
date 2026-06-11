@@ -1,0 +1,53 @@
+name: Feature Request
+description: Propose a new channel capability, transport layer, or workflow improvement.
+title: "feat: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem should this solve?
+      placeholder: Describe the current limitation or missing workflow.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should change?
+      placeholder: Describe the desired behavior or package addition.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What files, packages, or workflows are likely affected?
+      placeholder: |
+        - `packages/channel`
+        - `playgrounds/vanilla`
+        - `playgrounds/vanilla-workers`
+        - `.github/workflows/ready.yml`
+    validations:
+      required: false
+
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Tradeoffs
+      description: What are the likely downsides, alternatives, or risks?
+    validations:
+      required: false
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification Plan
+      description: Smallest checks that should prove the feature works.
+      placeholder: |
+        - [ ] `vpr ready`
+        - [ ] Manual smoke test
+    validations:
+      required: false
