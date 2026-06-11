@@ -9,7 +9,7 @@ import {
   createRequestIdFactory,
   type PendingRequestRegistry,
   type RequestIdFactory,
-} from "../_registries/requests";
+} from "../_registries/pending-requests";
 import type { PeerMessage } from "../messages";
 import type { CreatePeerOptions, PeerErrorContext, PeerErrorHandler } from "../types";
 
