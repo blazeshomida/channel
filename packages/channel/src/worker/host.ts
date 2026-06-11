@@ -1,5 +1,5 @@
 import type { Transport } from "../transport";
-import { createWorkerTransport } from "./_transport";
+import { createWorkerTransport } from "./_runtime/transport";
 import type { WorkerHostTarget, WorkerSendOptions } from "./types";
 
 /**
@@ -18,7 +18,8 @@ import type { WorkerHostTarget, WorkerSendOptions } from "./types";
 export function createTransport<TInbound = unknown, TOutbound = TInbound>(
   target: WorkerHostTarget<TInbound, TOutbound>,
 ): Transport<TInbound, TOutbound, WorkerSendOptions> {
-  return createWorkerTransport(target, {
+  return createWorkerTransport({
+    target,
     close: () => target.close?.(),
   });
 }
