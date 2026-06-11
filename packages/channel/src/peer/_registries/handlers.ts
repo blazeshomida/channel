@@ -1,4 +1,4 @@
-import type { PeerErrorHandler, PeerHandler } from "./types";
+import type { PeerErrorHandler, PeerHandler } from "../types";
 
 export interface RegisteredHandler {
   handler: PeerHandler<unknown, unknown>;

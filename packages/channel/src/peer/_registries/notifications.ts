@@ -3,7 +3,7 @@ import type {
   PeerErrorHandler,
   PeerNotificationContext,
   PeerNotificationListener,
-} from "./types";
+} from "../types";
 
 export interface RegisteredNotificationListener {
   listener: PeerNotificationListener<unknown>;

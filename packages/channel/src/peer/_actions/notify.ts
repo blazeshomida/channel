@@ -1,6 +1,6 @@
-import { assertOpen, type PeerContext } from "./_context";
-import { send } from "./_send";
-import type { PeerNotifyOptions } from "./types";
+import { assertOpen, type PeerContext } from "../_runtime/context";
+import type { PeerNotifyOptions } from "../types";
+import { send } from "./send";
 
 interface NotifyArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;

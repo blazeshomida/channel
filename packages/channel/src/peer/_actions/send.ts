@@ -1,6 +1,6 @@
-import type { TransportSendArgs } from "../transport";
-import type { PeerContext } from "./_context";
-import type { PeerMessage } from "./messages";
+import type { TransportSendArgs } from "../../transport";
+import type { PeerContext } from "../_runtime/context";
+import type { PeerMessage } from "../messages";
 
 interface SendArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;

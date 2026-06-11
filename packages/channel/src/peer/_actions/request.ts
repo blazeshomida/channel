@@ -1,7 +1,7 @@
-import type { PeerContext } from "./_context";
-import { createPeerClosedError } from "./_errors";
-import { send } from "./_send";
-import type { PeerRequestOptions } from "./types";
+import type { PeerContext } from "../_runtime/context";
+import { createPeerClosedError } from "../_runtime/errors";
+import type { PeerRequestOptions } from "../types";
+import { send } from "./send";
 
 interface RequestArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;
