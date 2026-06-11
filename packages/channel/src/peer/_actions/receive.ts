@@ -8,10 +8,12 @@ import {
   isNotificationMessage,
   isRequestMessage,
   isResponseMessage,
-  type PeerMessage,
-  type PeerNotificationMessage,
-  type PeerRequestMessage,
-  type PeerResponseMessage,
+} from "../_runtime/message-guards";
+import type {
+  PeerMessage,
+  PeerNotificationMessage,
+  PeerRequestMessage,
+  PeerResponseMessage,
 } from "../messages";
 import { send } from "./send";
 
