@@ -8,7 +8,8 @@ export type PeerErrorCode =
   | "REQUEST_FAILED"
   | "REQUEST_CANCELLED"
   | "STREAM_FAILED"
-  | "PEER_CLOSED";
+  | "PEER_CLOSED"
+  | "VALIDATION_FAILED";
 
 export interface PeerErrorPayload {
   code: PeerErrorCode;
