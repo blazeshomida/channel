@@ -7,6 +7,10 @@ import {
   type ActiveRequestRegistry,
 } from "../_registries/active-requests";
 import {
+  createActiveStreamRegistry,
+  type ActiveStreamRegistry,
+} from "../_registries/active-streams";
+import {
   createCancelledRequestRegistry,
   type CancelledRequestRegistry,
 } from "../_registries/cancelled-requests";
@@ -21,6 +25,14 @@ import {
   type PendingRequestRegistry,
   type RequestIdFactory,
 } from "../_registries/pending-requests";
+import {
+  createPendingStreamRegistry,
+  type PendingStreamRegistry,
+} from "../_registries/pending-streams";
+import {
+  createStreamHandlerRegistry,
+  type StreamHandlerRegistry,
+} from "../_registries/stream-handlers";
 
 interface CreateContextArgs<TSendOptions> {
   options: CreatePeerOptions<TSendOptions>;
@@ -32,7 +44,10 @@ export interface PeerContext<TSendOptions = void> {
   pendingRequests: PendingRequestRegistry;
   cancelledRequests: CancelledRequestRegistry;
   activeRequests: ActiveRequestRegistry;
+  pendingStreams: PendingStreamRegistry;
+  activeStreams: ActiveStreamRegistry;
   handlers: HandlerRegistry;
+  streamHandlers: StreamHandlerRegistry;
   notifications: NotificationRegistry;
   closed: boolean;
   onError?: PeerErrorHandler;
@@ -47,7 +62,10 @@ export function createContext<TSendOptions>({
     pendingRequests: createPendingRequestRegistry(),
     cancelledRequests: createCancelledRequestRegistry(),
     activeRequests: createActiveRequestRegistry(),
+    pendingStreams: createPendingStreamRegistry(),
+    activeStreams: createActiveStreamRegistry(),
     handlers: createHandlerRegistry(),
+    streamHandlers: createStreamHandlerRegistry(),
     notifications: createNotificationRegistry(),
     closed: false,
   };

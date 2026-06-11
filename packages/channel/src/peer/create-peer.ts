@@ -2,18 +2,23 @@ import type {
   CreatePeerOptions,
   Peer,
   PeerHandleOptions,
+  PeerHandleStreamOptions,
   PeerNotifyOptions,
   PeerOnOptions,
   PeerOnceOptions,
   PeerRequestOptions,
+  PeerStream,
+  PeerStreamOptions,
 } from "./types";
 
 import { close } from "./_actions/close";
 import { handle, hasHandler } from "./_actions/handle";
+import { handleStream, hasStreamHandler } from "./_actions/handle-stream";
 import { listen, listenOnce } from "./_actions/listen";
 import { notify } from "./_actions/notify";
 import { receive } from "./_actions/receive";
 import { request } from "./_actions/request";
+import { stream } from "./_actions/stream";
 import { createContext } from "./_runtime/context";
 
 export function createPeer<TSendOptions = void>(
@@ -46,6 +51,31 @@ export function createPeer<TSendOptions = void>(
 
     hasHandler(name: string): boolean {
       return hasHandler({
+        context,
+        name,
+      });
+    },
+
+    stream<TPayload = unknown, TResult = unknown>(
+      streamOptions: PeerStreamOptions<TPayload, TSendOptions>,
+    ): PeerStream<TResult> {
+      return stream<TResult, TPayload, TSendOptions>({
+        context,
+        options: streamOptions,
+      });
+    },
+
+    handleStream<TPayload = unknown, TResult = unknown>(
+      handleStreamOptions: PeerHandleStreamOptions<TPayload, TResult>,
+    ) {
+      return handleStream<TPayload, TResult, TSendOptions>({
+        context,
+        options: handleStreamOptions,
+      });
+    },
+
+    hasStreamHandler(name: string): boolean {
+      return hasStreamHandler({
         context,
         name,
       });

@@ -2,6 +2,7 @@ const maxCancelledRequests = 1024;
 
 export interface CancelledRequestRegistry {
   add(id: number): void;
+  has(id: number): boolean;
   delete(id: number): boolean;
   clear(): void;
 }
@@ -26,6 +27,10 @@ export function createCancelledRequestRegistry(): CancelledRequestRegistry {
           requests.delete(expiredId);
         }
       }
+    },
+
+    has(id) {
+      return requests.has(id);
     },
 
     delete(id) {

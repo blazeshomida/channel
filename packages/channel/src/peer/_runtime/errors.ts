@@ -20,6 +20,10 @@ export function createRequestCancelledError(reason?: unknown): PeerErrorPayload 
   return createPeerError("REQUEST_CANCELLED", "Request was cancelled.", reason);
 }
 
+export function createStreamFailedError(error: unknown): PeerErrorPayload {
+  return createPeerError("STREAM_FAILED", getErrorMessage(error));
+}
+
 export function createPeerClosedError(): PeerErrorPayload {
   return createPeerError("PEER_CLOSED", "Peer is closed.");
 }

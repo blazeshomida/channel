@@ -7,6 +7,7 @@ export type PeerErrorCode =
   | "METHOD_NOT_FOUND"
   | "REQUEST_FAILED"
   | "REQUEST_CANCELLED"
+  | "STREAM_FAILED"
   | "PEER_CLOSED";
 
 export interface PeerErrorPayload {
@@ -19,7 +20,10 @@ export type PeerErrorContext =
   | { type: "request"; id: number; name: string }
   | { type: "handler"; id: number; name: string }
   | { type: "notification"; name: string }
-  | { type: "response"; id: number };
+  | { type: "response"; id: number }
+  | { type: "stream"; id: number; name: string }
+  | { type: "stream-handler"; id: number; name: string }
+  | { type: "stream-message"; id: number };
 
 export type PeerErrorHandler = (error: unknown, context: PeerErrorContext) => void;
 
@@ -38,11 +42,24 @@ export interface PeerNotifyOptions<TPayload, TSendOptions> {
   onError?: PeerErrorHandler;
 }
 
+export interface PeerStreamOptions<TPayload, TSendOptions> {
+  name: string;
+  payload: TPayload;
+  send?: TSendOptions;
+  signal?: AbortSignal;
+  onError?: PeerErrorHandler;
+}
+
 export interface PeerHandleContext {
   id: number;
   name: string;
   signal: AbortSignal;
 }
+
+export type PeerStreamHandler<TPayload, TResult> = (
+  payload: TPayload,
+  context: PeerHandleContext,
+) => AsyncIterable<TResult>;
 
 export interface PeerNotificationContext {
   name: string;
@@ -61,6 +78,12 @@ export type PeerNotificationListener<TPayload> = (
 export interface PeerHandleOptions<TPayload, TResult> {
   name: string;
   handler: PeerHandler<TPayload, TResult>;
+  onError?: PeerErrorHandler;
+}
+
+export interface PeerHandleStreamOptions<TPayload, TResult> {
+  name: string;
+  handler: PeerStreamHandler<TPayload, TResult>;
   onError?: PeerErrorHandler;
 }
 
@@ -83,6 +106,10 @@ export interface CreatePeerOptions<TSendOptions = void> {
 
 export type PeerDispose = () => void;
 
+export interface PeerStream<TResult> extends AsyncIterableIterator<TResult> {
+  return(): Promise<IteratorResult<TResult>>;
+}
+
 export interface Peer<TSendOptions = void> {
   request<TPayload = unknown, TResult = unknown>(
     options: PeerRequestOptions<TPayload, TSendOptions>,
@@ -93,6 +120,16 @@ export interface Peer<TSendOptions = void> {
   ): PeerDispose;
 
   hasHandler(name: string): boolean;
+
+  stream<TPayload = unknown, TResult = unknown>(
+    options: PeerStreamOptions<TPayload, TSendOptions>,
+  ): PeerStream<TResult>;
+
+  handleStream<TPayload = unknown, TResult = unknown>(
+    options: PeerHandleStreamOptions<TPayload, TResult>,
+  ): PeerDispose;
+
+  hasStreamHandler(name: string): boolean;
 
   notify<TPayload = unknown>(options: PeerNotifyOptions<TPayload, TSendOptions>): void;
 

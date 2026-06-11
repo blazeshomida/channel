@@ -19,9 +19,12 @@ export function close<TSendOptions = void>({
   context.closed = true;
 
   context.pendingRequests.rejectAll(createPeerClosedError());
+  context.pendingStreams.rejectAll(createPeerClosedError());
   context.cancelledRequests.clear();
   context.activeRequests.abortAll(createPeerClosedError());
+  context.activeStreams.abortAll(createPeerClosedError());
   context.handlers.clear();
+  context.streamHandlers.clear();
   context.notifications.clear();
   unsubscribe();
   context.channel.close();
