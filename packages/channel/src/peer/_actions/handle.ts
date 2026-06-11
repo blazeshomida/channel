@@ -1,5 +1,6 @@
-import { assertOpen, type PeerContext } from "../_runtime/context";
 import type { PeerHandleOptions } from "../types";
+
+import { assertOpen, type PeerContext } from "../_runtime/context";
 
 interface HandleArgs<TPayload, TResult, TSendOptions> {
   context: PeerContext<TSendOptions>;
@@ -24,7 +25,10 @@ export function handle<TPayload = unknown, TResult = unknown, TSendOptions = voi
   let active = true;
 
   context.handlers.set(options.name, {
-    handler: (payload, handlerContext) => options.handler(payload as TPayload, handlerContext),
+    handler: (payload, handlerContext) => {
+      // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Peer payload types are compile-time contracts; runtime schemas belong in a future contract layer.
+      return options.handler(payload as TPayload, handlerContext);
+    },
     onError: options.onError,
   });
 

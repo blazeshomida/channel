@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
-import { createTestPeer, createTestPeerWithOptions } from "./helpers";
+import { createTestPeer, createTestPeerWithOptions, getErrorMessage } from "./helpers";
 
 test("sends notification messages", () => {
   const { peer, transport } = createTestPeer();
@@ -143,7 +143,7 @@ test("calls listener onError before root onError", () => {
       throw new Error("Listener failed.");
     },
     onError(error, context) {
-      errors.push(`local:${context.type}:${(error as Error).message}`);
+      errors.push(`local:${context.type}:${getErrorMessage(error)}`);
     },
   });
 

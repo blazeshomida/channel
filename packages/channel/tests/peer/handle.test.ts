@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
-import { createTestPeer, createTestPeerWithOptions } from "./helpers";
+import { createTestPeer, createTestPeerWithOptions, getErrorMessage } from "./helpers";
 
 test("sends method not found response for missing handlers", () => {
   const { transport } = createTestPeer();
@@ -248,7 +248,7 @@ test("calls handler onError before root onError for handler failures", async () 
 
   const { peer, transport } = createTestPeerWithOptions({
     onError(error, context) {
-      errors.push(`root:${context.type}:${(error as { message: string }).message}`);
+      errors.push(`root:${context.type}:${getErrorMessage(error)}`);
     },
   });
 
@@ -258,7 +258,7 @@ test("calls handler onError before root onError for handler failures", async () 
       throw new Error("Handler failed.");
     },
     onError(error, context) {
-      errors.push(`local:${context.type}:${(error as { message: string }).message}`);
+      errors.push(`local:${context.type}:${getErrorMessage(error)}`);
     },
   });
 

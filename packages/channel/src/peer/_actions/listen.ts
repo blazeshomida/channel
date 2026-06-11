@@ -1,5 +1,6 @@
-import { assertOpen, type PeerContext } from "../_runtime/context";
 import type { PeerDispose, PeerOnOptions, PeerOnceOptions } from "../types";
+
+import { assertOpen, type PeerContext } from "../_runtime/context";
 
 interface ListenArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;
@@ -26,8 +27,10 @@ function addListener<TPayload = unknown, TSendOptions = void>({
 
   return context.notifications.add({
     name: options.name,
-    listener: (payload, notificationContext) =>
-      options.listener(payload as TPayload, notificationContext),
+    listener: (payload, notificationContext) => {
+      // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Peer payload types are compile-time contracts; runtime schemas belong in a future contract layer.
+      options.listener(payload as TPayload, notificationContext);
+    },
     onError: options.onError,
     once,
   });

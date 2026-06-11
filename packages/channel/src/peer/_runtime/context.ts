@@ -1,4 +1,7 @@
 import type { Channel } from "../../channel";
+import type { PeerMessage } from "../messages";
+import type { CreatePeerOptions, PeerErrorContext, PeerErrorHandler } from "../types";
+
 import { createHandlerRegistry, type HandlerRegistry } from "../_registries/handlers";
 import {
   createNotificationRegistry,
@@ -10,8 +13,6 @@ import {
   type PendingRequestRegistry,
   type RequestIdFactory,
 } from "../_registries/pending-requests";
-import type { PeerMessage } from "../messages";
-import type { CreatePeerOptions, PeerErrorContext, PeerErrorHandler } from "../types";
 
 interface CreateContextArgs<TSendOptions> {
   options: CreatePeerOptions<TSendOptions>;

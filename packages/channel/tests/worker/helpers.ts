@@ -1,11 +1,11 @@
-import { expect, test } from "vite-plus/test";
-
 import type { Transport } from "../../src";
 import type {
   WorkerClientTarget,
   WorkerHostTarget,
   WorkerSendOptions,
 } from "../../src/worker/types";
+
+import { expect, test } from "vite-plus/test";
 
 export class TestWorkerTarget<TInbound, TOutbound>
   implements WorkerClientTarget<TInbound, TOutbound>, WorkerHostTarget<TInbound, TOutbound>
@@ -56,9 +56,9 @@ export class TestWorkerTarget<TInbound, TOutbound>
 
 interface SharedWorkerTransportBehaviorArgs {
   label: string;
-  createTransport(
+  createTransport: (
     target: TestWorkerTarget<string, string>,
-  ): Transport<string, string, WorkerSendOptions>;
+  ) => Transport<string, string, WorkerSendOptions>;
 }
 
 export function testSharedWorkerTransportBehavior({

@@ -10,8 +10,8 @@ export interface PendingRequest<TResult = unknown> {
 export type RequestIdFactory = () => number;
 
 export interface PendingRequestRegistry {
-  get(id: number): PendingRequest<unknown> | undefined;
-  set(id: number, request: PendingRequest<unknown>): void;
+  get(id: number): PendingRequest | undefined;
+  set(id: number, request: PendingRequest): void;
   delete(id: number): void;
   rejectAll(error: PeerErrorPayload): void;
 }
@@ -26,7 +26,7 @@ export function createRequestIdFactory(): RequestIdFactory {
 }
 
 export function createPendingRequestRegistry(): PendingRequestRegistry {
-  const requests = new Map<number, PendingRequest<unknown>>();
+  const requests = new Map<number, PendingRequest>();
 
   return {
     get(id) {

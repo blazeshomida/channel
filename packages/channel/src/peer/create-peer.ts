@@ -1,10 +1,3 @@
-import { close } from "./_actions/close";
-import { handle, hasHandler } from "./_actions/handle";
-import { listen, listenOnce } from "./_actions/listen";
-import { notify } from "./_actions/notify";
-import { receive } from "./_actions/receive";
-import { request } from "./_actions/request";
-import { createContext } from "./_runtime/context";
 import type {
   CreatePeerOptions,
   Peer,
@@ -14,6 +7,14 @@ import type {
   PeerOnceOptions,
   PeerRequestOptions,
 } from "./types";
+
+import { close } from "./_actions/close";
+import { handle, hasHandler } from "./_actions/handle";
+import { listen, listenOnce } from "./_actions/listen";
+import { notify } from "./_actions/notify";
+import { receive } from "./_actions/receive";
+import { request } from "./_actions/request";
+import { createContext } from "./_runtime/context";
 
 export function createPeer<TSendOptions = void>(
   options: CreatePeerOptions<TSendOptions>,
