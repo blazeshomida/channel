@@ -1,6 +1,7 @@
 import type { Transport } from "../transport";
-import { createWorkerTransport } from "./_runtime/transport";
 import type { WorkerClientTarget, WorkerSendOptions } from "./types";
+
+import { createWorkerTransport } from "./_runtime/transport";
 
 /**
  * Creates a transport for communicating with a worker from the main thread.

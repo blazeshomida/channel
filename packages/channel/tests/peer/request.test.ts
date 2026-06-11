@@ -1,7 +1,12 @@
 import { expect, test } from "vite-plus/test";
 
 import { createChannel, createPeer, type PeerMessage } from "../../src";
-import { TestPeerTransport, createTestPeer, createTestPeerWithOptions } from "./helpers";
+import {
+  TestPeerTransport,
+  createTestPeer,
+  createTestPeerWithOptions,
+  getErrorMessage,
+} from "./helpers";
 
 test("sends request messages with default numeric ids", () => {
   const { peer, transport } = createTestPeer();
@@ -143,7 +148,7 @@ test("calls request onError before root onError for error responses", async () =
 
   const { peer, transport } = createTestPeerWithOptions({
     onError(error, context) {
-      errors.push(`root:${context.type}:${(error as { message: string }).message}`);
+      errors.push(`root:${context.type}:${getErrorMessage(error)}`);
     },
   });
 
@@ -151,7 +156,7 @@ test("calls request onError before root onError for error responses", async () =
     name: "task.fail",
     payload: null,
     onError(error, context) {
-      errors.push(`local:${context.type}:${(error as { message: string }).message}`);
+      errors.push(`local:${context.type}:${getErrorMessage(error)}`);
     },
   });
 

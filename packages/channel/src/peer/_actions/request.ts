@@ -1,6 +1,7 @@
 import type { PeerContext } from "../_runtime/context";
-import { createPeerClosedError } from "../_runtime/errors";
 import type { PeerRequestOptions } from "../types";
+
+import { createPeerClosedError } from "../_runtime/errors";
 import { send } from "./send";
 
 interface RequestArgs<TPayload, TSendOptions> {
@@ -35,6 +36,7 @@ export function request<TPayload = unknown, TResult = unknown, TSendOptions = vo
       name: options.name,
       onError: options.onError,
       resolve: (value) => {
+        // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Request result types are compile-time contracts; runtime schemas belong in a future contract layer.
         resolve(value as TResult);
       },
       reject,

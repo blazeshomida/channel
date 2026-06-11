@@ -1,3 +1,10 @@
+import type {
+  PeerMessage,
+  PeerNotificationMessage,
+  PeerRequestMessage,
+  PeerResponseMessage,
+} from "../messages";
+
 import { reportError, type PeerContext } from "../_runtime/context";
 import {
   createMethodNotFoundError,
@@ -9,12 +16,6 @@ import {
   isRequestMessage,
   isResponseMessage,
 } from "../_runtime/message-guards";
-import type {
-  PeerMessage,
-  PeerNotificationMessage,
-  PeerRequestMessage,
-  PeerResponseMessage,
-} from "../messages";
 import { send } from "./send";
 
 interface ReceiveArgs<TSendOptions> {
