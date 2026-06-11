@@ -39,9 +39,8 @@ jobs:
           path: |
             node_modules/.vite
             node_modules/.vite-temp
-            packages/channel/dist
-            playgrounds/vanilla/dist
-            playgrounds/vanilla-workers/dist
+            packages/*/dist
+            playgrounds/*/dist
           key: vite-plus-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: |
             vite-plus-task-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-

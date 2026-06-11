@@ -1,0 +1,62 @@
+name: Task
+description: Track a scoped implementation, cleanup, migration, or documentation task.
+title: "task: "
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this task is done?
+      placeholder: Describe the intended end state.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this task needed?
+      placeholder: Include relevant decisions, constraints, or prior work.
+    validations:
+      required: false
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What should change?
+      placeholder: |
+        - [ ] Add ...
+        - [ ] Update ...
+        - [ ] Remove ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of Scope
+      description: What should not be changed in this task?
+      placeholder: |
+        - Do not add release automation.
+        - Do not change package exports.
+    validations:
+      required: false
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: Smallest reliable checks to run.
+      placeholder: |
+        - [ ] `vpr ready`
+    validations:
+      required: true
+
+  - type: textarea
+    id: followups
+    attributes:
+      label: Follow-ups
+      description: Work that should happen later, but not in this task.
+    validations:
+      required: false
