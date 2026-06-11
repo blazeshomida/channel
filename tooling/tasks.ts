@@ -2,7 +2,10 @@ import type { UserConfig } from "vite-plus";
 
 import {
   dependencyPatterns,
+  generatedPatterns,
   ignoredDirectoryInput,
+  ignoredFileInput,
+  localToolPatterns,
   outputPatterns,
   type TaskInput,
   workspaceOutput,
@@ -23,6 +26,8 @@ function workspaceInput(...inputs: TaskInput[]): TaskInput[] {
     { auto: true },
     ...dependencyPatterns.flatMap(ignoredDirectoryInput),
     ...outputPatterns.flatMap(ignoredDirectoryInput),
+    ...localToolPatterns.flatMap(ignoredDirectoryInput),
+    ...generatedPatterns.map(ignoredFileInput),
     ...inputs,
   ];
 }
@@ -46,9 +51,20 @@ export const tasks = {
     input: workspaceInput(),
   },
 
+  "task:workspace:fmt": {
+    command: "vp fmt",
+    cache: false,
+  },
+
+  "task:workspace:lint": {
+    command: "vp lint",
+    input: workspaceInput(),
+  },
+
   "task:workspace:check": {
     command: "vp check",
     dependsOn: ["task:channel:pack"],
+    input: workspaceInput(),
   },
 
   "task:vanilla:build": {

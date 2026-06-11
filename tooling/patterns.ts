@@ -1,7 +1,15 @@
-export interface WorkspacePattern {
-  pattern: string;
-  base: "workspace";
-}
+// Output directories are tool-owned and can be deleted or recreated by commands.
+export const outputPatterns = ["dist", ".output", "build", "coverage"];
+
+// Local cache/temp directories are not source inputs.
+export const localToolPatterns = [".cache", ".temp", "tmp", ".vite", ".vite-temp"];
+
+// Dependency directories are restored by the package manager, not maintained as source.
+export const dependencyPatterns = ["node_modules", ".pnpm-store"];
+
+// Generated files are derived from source files. Add package-specific generated
+// files here later when the template creates them.
+export const generatedPatterns: string[] = [];
 
 export type TaskInput = { auto: true } | string | WorkspacePattern;
 
@@ -29,14 +37,6 @@ export function workspaceOutput(pattern: string): WorkspacePattern[] {
   return [workspacePattern(pattern)];
 }
 
-export const dependencyPatterns = ["node_modules", ".vite", ".vite-temp"];
-
-/**
- * Output directories are tool-owned and can be deleted or recreated by tasks.
- * They should be ignored as independent task cache inputs.
- */
-export const outputPatterns = ["dist", "coverage"];
-
 /**
  * Creates ignored glob patterns for a directory.
  *
@@ -45,4 +45,13 @@ export const outputPatterns = ["dist", "coverage"];
  */
 export function ignoredDirectoryInput(pattern: string): string[] {
   return [`!**/${pattern}`, `!**/${pattern}/**`];
+}
+
+export function ignoredFileInput(pattern: string): string {
+  return `!**/${pattern}`;
+}
+
+export interface WorkspacePattern {
+  pattern: string;
+  base: "workspace";
 }
