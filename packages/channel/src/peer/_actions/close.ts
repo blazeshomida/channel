@@ -1,6 +1,6 @@
-import type { PeerContext } from "./_context";
-import { createPeerClosedError } from "./_errors";
-import type { PeerDispose } from "./types";
+import type { PeerContext } from "../_runtime/context";
+import { createPeerClosedError } from "../_runtime/errors";
+import type { PeerDispose } from "../types";
 
 interface CloseArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;

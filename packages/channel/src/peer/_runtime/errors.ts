@@ -1,4 +1,4 @@
-import type { PeerErrorCode, PeerErrorPayload } from "./types";
+import type { PeerErrorCode, PeerErrorPayload } from "../types";
 
 export function createPeerError(
   code: PeerErrorCode,

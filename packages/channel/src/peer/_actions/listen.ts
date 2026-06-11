@@ -1,5 +1,5 @@
-import { assertOpen, type PeerContext } from "./_context";
-import type { PeerDispose, PeerOnOptions, PeerOnceOptions } from "./types";
+import { assertOpen, type PeerContext } from "../_runtime/context";
+import type { PeerDispose, PeerOnOptions, PeerOnceOptions } from "../types";
 
 interface ListenArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;

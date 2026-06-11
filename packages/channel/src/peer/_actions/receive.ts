@@ -1,6 +1,9 @@
-import { reportError, type PeerContext } from "./_context";
-import { createMethodNotFoundError, createPeerError, createRequestFailedError } from "./_errors";
-import { send } from "./_send";
+import { reportError, type PeerContext } from "../_runtime/context";
+import {
+  createMethodNotFoundError,
+  createPeerError,
+  createRequestFailedError,
+} from "../_runtime/errors";
 import {
   isNotificationMessage,
   isRequestMessage,
@@ -9,7 +12,8 @@ import {
   type PeerNotificationMessage,
   type PeerRequestMessage,
   type PeerResponseMessage,
-} from "./messages";
+} from "../messages";
+import { send } from "./send";
 
 interface ReceiveArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;

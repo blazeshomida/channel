@@ -1,4 +1,4 @@
-import type { PeerErrorHandler, PeerErrorPayload } from "./types";
+import type { PeerErrorHandler, PeerErrorPayload } from "../types";
 
 export interface PendingRequest<TResult = unknown> {
   name: string;
