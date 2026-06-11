@@ -37,6 +37,9 @@
     "prepublishOnly": "vp run build",
     "test": "vp test"
   },
+  "dependencies": {
+    "@standard-schema/spec": "catalog:"
+  },
   "devDependencies": {
     "typescript": "catalog:",
     "vite-plus": "catalog:"
