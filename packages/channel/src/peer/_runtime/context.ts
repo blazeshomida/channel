@@ -6,6 +6,10 @@ import {
   createActiveRequestRegistry,
   type ActiveRequestRegistry,
 } from "../_registries/active-requests";
+import {
+  createCancelledRequestRegistry,
+  type CancelledRequestRegistry,
+} from "../_registries/cancelled-requests";
 import { createHandlerRegistry, type HandlerRegistry } from "../_registries/handlers";
 import {
   createNotificationRegistry,
@@ -26,7 +30,7 @@ export interface PeerContext<TSendOptions = void> {
   channel: Channel<PeerMessage, PeerMessage, TSendOptions>;
   getRequestId: RequestIdFactory;
   pendingRequests: PendingRequestRegistry;
-  cancelledRequests: Set<number>;
+  cancelledRequests: CancelledRequestRegistry;
   activeRequests: ActiveRequestRegistry;
   handlers: HandlerRegistry;
   notifications: NotificationRegistry;
@@ -41,7 +45,7 @@ export function createContext<TSendOptions>({
     channel: options.channel,
     getRequestId: createRequestIdFactory(),
     pendingRequests: createPendingRequestRegistry(),
-    cancelledRequests: new Set(),
+    cancelledRequests: createCancelledRequestRegistry(),
     activeRequests: createActiveRequestRegistry(),
     handlers: createHandlerRegistry(),
     notifications: createNotificationRegistry(),
