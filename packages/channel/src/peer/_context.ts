@@ -1,7 +1,12 @@
 import type { Channel } from "../channel";
-import { createHandlerRegistry } from "./_handlers";
-import { createNotificationRegistry } from "./_notifications";
-import { createPendingRequestRegistry, createRequestIdFactory } from "./_requests";
+import { createHandlerRegistry, type HandlerRegistry } from "./_handlers";
+import { createNotificationRegistry, type NotificationRegistry } from "./_notifications";
+import {
+  createPendingRequestRegistry,
+  createRequestIdFactory,
+  type PendingRequestRegistry,
+  type RequestIdFactory,
+} from "./_requests";
 import type { PeerMessage } from "./messages";
 import type { CreatePeerOptions, PeerErrorContext, PeerErrorHandler } from "./types";
 
@@ -11,10 +16,10 @@ interface CreateContextArgs<TSendOptions> {
 
 export interface PeerContext<TSendOptions = void> {
   channel: Channel<PeerMessage, PeerMessage, TSendOptions>;
-  getRequestId: () => number;
-  pendingRequests: ReturnType<typeof createPendingRequestRegistry>;
-  handlers: ReturnType<typeof createHandlerRegistry>;
-  notifications: ReturnType<typeof createNotificationRegistry>;
+  getRequestId: RequestIdFactory;
+  pendingRequests: PendingRequestRegistry;
+  handlers: HandlerRegistry;
+  notifications: NotificationRegistry;
   closed: boolean;
   onError?: PeerErrorHandler;
 }

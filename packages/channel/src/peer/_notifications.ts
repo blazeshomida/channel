@@ -18,10 +18,22 @@ export interface NotificationListenerOptions {
   once: boolean;
 }
 
-export function createNotificationRegistry() {
+export type NotifyNotificationListener = (
+  listener: RegisteredNotificationListener,
+  payload: unknown,
+  context: PeerNotificationContext,
+) => void;
+
+export interface NotificationRegistry {
+  add(options: NotificationListenerOptions): PeerDispose;
+  emit(name: string, payload: unknown, notify: NotifyNotificationListener): void;
+  clear(): void;
+}
+
+export function createNotificationRegistry(): NotificationRegistry {
   const listenersByName = new Map<string, Set<RegisteredNotificationListener>>();
 
-  function deleteListener(name: string, listener: RegisteredNotificationListener) {
+  function deleteListener(name: string, listener: RegisteredNotificationListener): void {
     const listeners = listenersByName.get(name);
 
     if (!listeners) {
@@ -36,7 +48,7 @@ export function createNotificationRegistry() {
   }
 
   return {
-    add(options: NotificationListenerOptions): PeerDispose {
+    add(options) {
       let active = true;
 
       const listener: RegisteredNotificationListener = {
@@ -64,15 +76,7 @@ export function createNotificationRegistry() {
       };
     },
 
-    emit(
-      name: string,
-      payload: unknown,
-      notify: (
-        listener: RegisteredNotificationListener,
-        payload: unknown,
-        context: PeerNotificationContext,
-      ) => void,
-    ) {
+    emit(name, payload, notify) {
       const listeners = listenersByName.get(name);
 
       if (!listeners) {
