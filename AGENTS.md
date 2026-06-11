@@ -38,11 +38,73 @@ packages/
 playgrounds/
   vanilla/
   vanilla-workers/
+
+tooling/
+.github/
+.changeset/
 ```
+
+## Workspace Boundaries
+
+- Root config owns workspace-wide tooling and task orchestration.
+- Package config owns package build, test, and publish behavior.
+- Playground config owns browser/demo behavior.
+- `tooling/` owns shared Vite+ format, lint, task, and pattern config.
+- `.github/` owns CI, release, PR, and issue templates.
+- `.changeset/` owns versioning and release intent.
+
+Do not move package-specific behavior into root config unless it truly applies to the whole workspace.
+
+## File and Folder Conventions
+
+Prefer vertical structure over horizontal structure.
+
+Use the vertical codebase approach as the default reference: https://tkdodo.eu/blog/the-vertical-codebase
+
+Group code by feature, domain, package concern, or workflow instead of by technical file type. Code that changes together should usually live together.
+
+Rules:
+
+- `index.ts` is the public boundary for a vertical.
+- `_*.ts` files are private to the vertical.
+- `_*/` folders are private implementation folders.
+- Do not import from another vertical's `_` files.
+- Promote code to shared only after at least two real call sites need it.
+- Shared code should have a clear name and ownership; avoid vague names like `utils`.
+- Keep tests near the code they verify when practical.
+- Keep types near the code that owns them unless they are part of the public API.
+
+## Worktree Convention
+
+Use sibling worktree directories for parallel branch work.
+
+Convention:
+
+```txt
+{repo}.worktrees/{slugified-branch}
+```
+
+Example:
+
+```txt
+channel/
+channel.worktrees/refactor-peer-internals
+channel.worktrees/docs-readme-updates
+```
+
+Rules:
+
+- Keep the main checkout at the repo root.
+- Keep branch worktrees in the sibling `.worktrees` directory.
+- Slugify branch names by replacing `/` with `-`.
+- Do not create nested worktrees inside the main checkout.
+- Verify the active worktree before editing, committing, rebasing, or force-pushing.
 
 ## Repository Commands
 
 Prefer the package manager already used by the repository. This repository uses `pnpm` through Vite+. Do not switch to `npm`, `yarn`, or `bun` unless explicitly requested.
+
+Vite+ runs package scripts and configured tasks through `vp run`. Use `vpr` as the shorthand for human-facing commands.
 
 Install dependencies:
 
@@ -53,67 +115,79 @@ vp install
 Run the full verification workflow:
 
 ```sh
-vp run ready
+vpr ready
 ```
 
 Run workspace checks:
 
 ```sh
-vp run check
+vpr check
 ```
 
 Run package tests:
 
 ```sh
-vp run test
+vpr test
 ```
 
 Build the vanilla playground:
 
 ```sh
-vp run build
+vpr build
 ```
 
 Build the worker playground:
 
 ```sh
-vp run build:vanilla-workers
+vpr build:vanilla-workers
 ```
 
 Build the package:
 
 ```sh
-vp run pack
+vpr pack
 ```
 
 Run the vanilla playground:
 
 ```sh
-vp run dev:vanilla
+vpr dev:vanilla
 ```
 
 Run the worker playground:
 
 ```sh
-vp run dev:vanilla-workers
+vpr dev:vanilla-workers
 ```
 
 Run the package build watcher:
 
 ```sh
-vp run dev:package
+vpr dev:package
 ```
 
 Create a changeset for user-facing package changes:
 
 ```sh
-vp run changeset
+vpr changeset
 ```
 
 Apply pending changesets locally:
 
 ```sh
-vp run version
+vpr version
+```
+
+Format files:
+
+```sh
+vpr fmt
+```
+
+Lint files:
+
+```sh
+vpr lint
 ```
 
 ## Vite+ Tasks
@@ -123,6 +197,8 @@ The workspace uses Vite+ tasks to keep package and playground checks ordered cor
 Important tasks:
 
 - `task:channel:pack` builds package output and declarations.
+- `task:workspace:fmt` formats workspace files and is intentionally uncached.
+- `task:workspace:lint` runs workspace linting.
 - `task:workspace:check` depends on `task:channel:pack` and runs workspace checks after package declarations exist.
 - `task:channel:test` runs package tests.
 - `task:vanilla:build` depends on `task:channel:pack` and builds the vanilla playground against package output.
@@ -130,6 +206,8 @@ Important tasks:
 - `task:ready` runs workspace check, package tests, and playground builds.
 
 The playgrounds import `@blazeshomida/channel` through the workspace package name. Keep this package-realistic import path unless explicitly asked to test source aliases.
+
+Each package or playground owns its own `#/* -> ./src/*` alias. Do not define `#/*` in the root `tsconfig.base.json`.
 
 ## Workflow
 
@@ -230,6 +308,7 @@ General defaults:
 - Keep examples practical and minimal.
 - Avoid clever abstractions that do not reduce real duplication.
 - Do not add comments that only repeat what the code says.
+- Prefer vertical folders grouped by behavior over horizontal folders grouped by file type.
 
 ## Public API Changes
 
@@ -271,17 +350,17 @@ Run the smallest reliable verification for the change.
 
 Examples:
 
-- Type-only change: run `vp run check`.
-- Package behavior change: run `vp run test`.
-- Package public API change: run `vp run ready`.
-- Build config change: run `vp run ready`.
-- Playground change: run `vp run build`, the relevant playground build task, or `vp run ready`.
-- Release workflow or package metadata change: run `vp run ready` and inspect package output when relevant.
+- Type-only change: run `vpr check`.
+- Package behavior change: run `vpr test`.
+- Package public API change: run `vpr ready`.
+- Build config change: run `vpr ready`.
+- Playground change: run `vpr build`, the relevant playground build task, or `vpr ready`.
+- Release workflow or package metadata change: run `vpr ready` and inspect package output when relevant.
 
 For package packing changes, verify the tarball shape when useful:
 
 ```sh
-vp run pack
+vpr pack
 cd packages/channel
 pnpm pack --dry-run
 ```
@@ -365,6 +444,14 @@ Before adding a dependency:
 - Update lockfiles consistently.
 
 Do not switch package managers.
+
+## Tooling Rules
+
+Vite+ owns formatting, linting, checking, testing, packing, and task orchestration.
+
+Shared task input patterns live in `tooling/patterns.ts`.
+
+When adding generated files, outputs, or cache directories, update tooling patterns and task outputs as needed.
 
 ## Generated Files
 

@@ -28,6 +28,8 @@ Vite+ CLI
 
 ## Commands
 
+Vite+ runs package scripts and configured tasks through `vp run`. The `vpr` command is the shorthand for `vp run`.
+
 Install dependencies:
 
 ```sh
@@ -37,55 +39,67 @@ vp install
 Run the full verification workflow:
 
 ```sh
-vp run ready
+vpr ready
 ```
 
 Run the vanilla playground:
 
 ```sh
-vp run dev:vanilla
+vpr dev:vanilla
 ```
 
 Run the worker playground:
 
 ```sh
-vp run dev:vanilla-workers
+vpr dev:vanilla-workers
 ```
 
 Run the package build watcher:
 
 ```sh
-vp run dev:package
+vpr dev:package
 ```
 
 Build the package:
 
 ```sh
-vp run pack
+vpr pack
 ```
 
 Build the vanilla playground:
 
 ```sh
-vp run build
+vpr build
 ```
 
 Build the worker playground:
 
 ```sh
-vp run build:vanilla-workers
+vpr build:vanilla-workers
 ```
 
 Run package tests:
 
 ```sh
-vp run test
+vpr test
 ```
 
 Run workspace checks:
 
 ```sh
-vp run check
+vpr check
+```
+
+Format files:
+
+```sh
+vpr fmt
+```
+
+Lint files:
+
+```sh
+vpr lint
 ```
 
 ## Package
@@ -109,6 +123,63 @@ import { createChannel } from "@blazeshomida/channel";
 ```
 
 This keeps the playgrounds close to how an external consumer will use the package.
+
+## Workspace Boundaries
+
+Root config owns workspace-wide tooling and task orchestration. Package config owns package build, test, and publish behavior. Playground config owns browser/demo behavior.
+
+```txt
+vite.config.ts
+packages/channel/vite.config.ts
+playgrounds/vanilla/vite.config.ts
+playgrounds/vanilla-workers/vite.config.ts
+```
+
+`tooling/` owns shared Vite+ formatting, linting, task, and pattern configuration. `.changeset/` owns package versioning and release intent. `.github/` owns CI, release, pull request, and issue templates.
+
+## Import Aliases
+
+Each package or playground owns its own `#/*` alias.
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "#/*": ["./src/*"]
+    }
+  }
+}
+```
+
+The alias means:
+
+```txt
+#/* = this package or playground's local src/*
+```
+
+Do not define `#/*` in the root `tsconfig.base.json`. In a monorepo, root aliases can accidentally point every package at the wrong source tree.
+
+## File and Folder Conventions
+
+Prefer vertical structure over horizontal structure.
+
+Use the vertical codebase approach as the default reference:
+
+- [The Vertical Codebase](https://tkdodo.eu/blog/the-vertical-codebase)
+
+Group code by feature, domain, package concern, or workflow instead of by technical file type. Code that changes together should usually live together.
+
+Rules:
+
+- `index.ts` is the public boundary for a vertical.
+- `_*.ts` files are private to the vertical.
+- `_*/` folders are private implementation folders.
+- Do not import from another vertical's `_` files.
+- Promote code to shared only after at least two real call sites need it.
+- Shared code should have a clear name and ownership.
+- Avoid vague dumping grounds like `utils`.
+- Keep tests near the code they verify when practical.
+- Keep types near the code that owns them unless they are part of the public API.
 
 ## Task graph
 
@@ -135,6 +206,8 @@ flowchart TD
 
 `task:channel:pack` runs before workspace checks and playground builds so the playgrounds can resolve the package through its built `dist` output.
 
+`task:workspace:fmt` is intentionally uncached because it mutates source files. `task:workspace:lint` runs workspace linting. `task:workspace:check` runs formatting, linting, and TypeScript checks after package declarations exist.
+
 `task:ready` runs:
 
 1. `task:workspace:check`
@@ -149,16 +222,41 @@ This workspace uses Changesets for package versioning and changelog generation.
 Create a changeset for user-facing package changes:
 
 ```sh
-vp run changeset
+vpr changeset
 ```
 
 Apply pending changesets locally:
 
 ```sh
-vp run version
+vpr version
 ```
 
 The release workflow uses Changesets to create release pull requests from changesets committed to `main`.
+
+## Tooling
+
+Vite+ owns the local workflow.
+
+Root config:
+
+```txt
+vite.config.ts
+```
+
+Focused tooling config:
+
+```txt
+tooling/format.ts
+tooling/lint.ts
+tooling/patterns.ts
+tooling/tasks.ts
+```
+
+Formatting sorts imports by type imports, built-ins/external packages, `#/*` project alias imports, relative imports, and unknown imports. The formatter also sorts package scripts.
+
+Linting enables Vite+ lint rules, type-aware checks, and strict correctness categories.
+
+Shared task input exclusions live in `tooling/patterns.ts`.
 
 ## Releases
 
