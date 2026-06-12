@@ -48,7 +48,8 @@ export function createContractOperations<const TContract extends Contract, TSend
       let disposeProtocolHandler: PeerDispose;
 
       if (operation.kind === "request") {
-        // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Runtime contract dispatch narrows the unified handler to a request handler.
+        // Type boundary: contract dispatch narrows the unified handler to a request handler.
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const handler = options.handler as (
           input: unknown,
           context: Parameters<typeof options.handler>[1],
@@ -73,7 +74,8 @@ export function createContractOperations<const TContract extends Contract, TSend
           ...("onError" in options ? { onError: options.onError } : {}),
         });
       } else {
-        // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Runtime contract dispatch narrows the unified handler to a stream handler.
+        // Type boundary: contract dispatch narrows the unified handler to a stream handler.
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const handler = options.handler as ProtocolStreamHandler<unknown, unknown>;
 
         disposeProtocolHandler = runtime.handleStream({
