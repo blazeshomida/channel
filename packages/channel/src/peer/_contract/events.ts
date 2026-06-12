@@ -17,6 +17,7 @@ interface ContractEventListener {
 interface ContractEventState {
   listeners: Set<ContractEventListener>;
   unsubscribe: PeerDispose;
+  validationTail: Promise<void> | undefined;
 }
 
 interface CreateContractEventsArgs<TSendOptions> {
@@ -99,19 +100,26 @@ export function createContractEvents<TSendOptions>({
       return;
     }
 
-    void validate({
-      schema: operation.input,
-      value: input,
-      operation: name,
-      direction: "input",
-    })
-      .then((validatedInput) => {
-        deliver(name, validatedInput);
-      })
-      .catch((error: unknown) => {
-        const state = events.get(name);
+    const state = events.get(name);
 
-        if (!state) {
+    if (!state) {
+      return;
+    }
+
+    const validateAndDeliver = async (): Promise<void> => {
+      try {
+        const validatedInput = await validate({
+          schema: operation.input,
+          value: input,
+          operation: name,
+          direction: "input",
+        });
+
+        if (events.get(name) === state) {
+          deliver(name, validatedInput);
+        }
+      } catch (error) {
+        if (events.get(name) !== state) {
           return;
         }
 
@@ -126,7 +134,19 @@ export function createContractEvents<TSendOptions>({
           type: "notification",
           name,
         });
-      });
+      }
+    };
+    const validation =
+      state.validationTail === undefined
+        ? validateAndDeliver()
+        : state.validationTail.then(validateAndDeliver);
+
+    state.validationTail = validation;
+    void validation.finally(() => {
+      if (state.validationTail === validation) {
+        state.validationTail = undefined;
+      }
+    });
   }
 
   return {
@@ -142,6 +162,7 @@ export function createContractEvents<TSendOptions>({
               receive(name, input);
             },
           }),
+          validationTail: undefined,
         };
         events.set(name, state);
       }
