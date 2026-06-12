@@ -45,6 +45,7 @@ interface ProducerStream {
 
 interface CreateStreamLifecycleArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;
+  getNextId: () => number;
 }
 
 export interface StreamLifecycle<TSendOptions> {
@@ -104,6 +105,7 @@ function closeProducer(stream: ProducerStream, reason?: unknown): void {
 
 export function createStreamLifecycle<TSendOptions>({
   context,
+  getNextId,
 }: CreateStreamLifecycleArgs<TSendOptions>): StreamLifecycle<TSendOptions> {
   const consumers = new Map<number, ConsumerStream>();
   const cancelledConsumers = new Set<number>();
@@ -223,7 +225,7 @@ export function createStreamLifecycle<TSendOptions>({
       };
 
       const start = () => {
-        id = context.getRequestId();
+        id = getNextId();
         started = true;
 
         consumers.set(id, {

@@ -13,28 +13,29 @@ import { handle, hasHandler } from "../_actions/handle";
 import { handleStream, hasStreamHandler } from "../_actions/handle-stream";
 import { notify } from "../_actions/notify";
 import { receive } from "../_actions/receive";
-import { request } from "../_actions/request";
 import { createContext } from "./context";
+import { createRequestLifecycle } from "./request-lifecycle";
 import { createStreamLifecycle } from "./stream-lifecycle";
 
 export function createProtocolRuntime<TSendOptions = void>(
   options: CreateProtocolRuntimeOptions<TSendOptions>,
 ): ProtocolRuntime<TSendOptions> {
   const context = createContext({ options });
-  const streams = createStreamLifecycle({ context });
+  const requests = createRequestLifecycle({ context });
+  const streams = createStreamLifecycle({
+    context,
+    getNextId: () => requests.getNextId(),
+  });
 
   const unsubscribe = context.channel.subscribe((message) => {
-    receive({ context, message, streams });
+    receive({ context, message, requests, streams });
   });
 
   return {
     request<TPayload = unknown, TResult = unknown>(
       requestOptions: ProtocolRequestOptions<TPayload, TSendOptions>,
     ): Promise<TResult> {
-      return request<TPayload, TResult, TSendOptions>({
-        context,
-        options: requestOptions,
-      });
+      return requests.create<TPayload, TResult>(requestOptions);
     },
 
     handle<TPayload = unknown, TResult = unknown>(
@@ -85,6 +86,7 @@ export function createProtocolRuntime<TSendOptions = void>(
     close(): void {
       close({
         context,
+        requests,
         streams,
         unsubscribe,
       });

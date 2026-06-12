@@ -261,6 +261,43 @@ test("handler rejections after cancellation do not report or respond", async () 
   expect(transport.sent).toEqual([]);
 });
 
+test("closing a peer aborts active request handlers", async () => {
+  const { peer, transport } = createTestPeer();
+  let handlerSignal: AbortSignal | undefined;
+  let resolveHandler: ((value: string) => void) | undefined;
+
+  peer.handle({
+    name: "task.run",
+    handler(_payload, context) {
+      handlerSignal = context.signal;
+
+      return new Promise<string>((resolve) => {
+        resolveHandler = resolve;
+      });
+    },
+  });
+
+  transport.emit({
+    type: "request",
+    id: 1,
+    name: "task.run",
+    payload: null,
+  });
+
+  peer.close();
+
+  expect(handlerSignal?.aborted).toBe(true);
+  expect(handlerSignal?.reason).toMatchObject({
+    code: "PEER_CLOSED",
+    message: "Peer is closed.",
+  });
+
+  resolveHandler?.("done");
+  await Promise.resolve();
+
+  expect(transport.sent).toEqual([]);
+});
+
 test("closing a peer cleans pending request abort listeners", async () => {
   const { peer, transport } = createTestPeer();
   const controller = new AbortController();

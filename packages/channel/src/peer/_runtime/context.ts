@@ -3,21 +3,7 @@ import type { PeerMessage } from "../messages";
 import type { PeerErrorContext, PeerErrorHandler } from "../types";
 import type { CreateProtocolRuntimeOptions, ProtocolNotificationListener } from "./types";
 
-import {
-  createActiveRequestRegistry,
-  type ActiveRequestRegistry,
-} from "../_registries/active-requests";
-import {
-  createCancelledRequestRegistry,
-  type CancelledRequestRegistry,
-} from "../_registries/cancelled-requests";
 import { createHandlerRegistry, type HandlerRegistry } from "../_registries/handlers";
-import {
-  createPendingRequestRegistry,
-  createRequestIdFactory,
-  type PendingRequestRegistry,
-  type RequestIdFactory,
-} from "../_registries/pending-requests";
 import {
   createStreamHandlerRegistry,
   type StreamHandlerRegistry,
@@ -29,10 +15,6 @@ interface CreateContextArgs<TSendOptions> {
 
 export interface PeerContext<TSendOptions = void> {
   channel: Channel<PeerMessage, PeerMessage, TSendOptions>;
-  getRequestId: RequestIdFactory;
-  pendingRequests: PendingRequestRegistry;
-  cancelledRequests: CancelledRequestRegistry;
-  activeRequests: ActiveRequestRegistry;
   handlers: HandlerRegistry;
   streamHandlers: StreamHandlerRegistry;
   onNotification?: ProtocolNotificationListener<unknown>;
@@ -45,10 +27,6 @@ export function createContext<TSendOptions>({
 }: CreateContextArgs<TSendOptions>): PeerContext<TSendOptions> {
   const context: PeerContext<TSendOptions> = {
     channel: options.channel,
-    getRequestId: createRequestIdFactory(),
-    pendingRequests: createPendingRequestRegistry(),
-    cancelledRequests: createCancelledRequestRegistry(),
-    activeRequests: createActiveRequestRegistry(),
     handlers: createHandlerRegistry(),
     streamHandlers: createStreamHandlerRegistry(),
     closed: false,
