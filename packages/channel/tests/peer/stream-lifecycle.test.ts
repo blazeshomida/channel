@@ -198,6 +198,7 @@ test("cancel suppresses iterator cleanup failures", () => {
 test("closing peers rejects pending streams and aborts active stream handlers", async () => {
   const { peer, transport } = createTestPeer();
   let handlerSignal: AbortSignal | undefined;
+  let returned = false;
 
   peer.handleStream({
     name: "producer",
@@ -209,6 +210,14 @@ test("closing peers rejects pending streams and aborts active stream handlers", 
           return {
             next() {
               return new Promise<IteratorResult<number>>(() => {});
+            },
+            async return() {
+              returned = true;
+
+              return {
+                done: true,
+                value: undefined,
+              };
             },
           };
         },
@@ -236,5 +245,6 @@ test("closing peers rejects pending streams and aborts active stream handlers", 
     message: "Peer is closed.",
   });
   expect(handlerSignal?.aborted).toBe(true);
+  expect(returned).toBe(true);
   expect(transport.closed).toBe(true);
 });
