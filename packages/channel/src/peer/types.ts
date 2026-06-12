@@ -40,3 +40,16 @@ export type PeerDispose = () => void;
 export interface PeerStream<TResult> extends AsyncIterableIterator<TResult> {
   return(): Promise<IteratorResult<TResult>>;
 }
+
+export type PeerValidationDirection = "input" | "output" | "item";
+
+export interface PeerValidationIssue {
+  message: string;
+  path?: readonly (string | number)[];
+}
+
+export interface PeerValidationErrorData {
+  operation: string;
+  direction: PeerValidationDirection;
+  issues: readonly PeerValidationIssue[];
+}

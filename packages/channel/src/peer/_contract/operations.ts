@@ -21,7 +21,13 @@ export function createContractOperations<const TContract extends Contract, TSend
   contract,
   runtime,
 }: CreateContractOperationsArgs<TContract, TSendOptions>): ContractOperations<TContract> {
-  const registrations = new Map<string, symbol>();
+  const registrations = new Map<
+    string,
+    {
+      registration: symbol;
+      dispose: PeerDispose;
+    }
+  >();
 
   return {
     handle<TName extends HandleName<TContract>>(
@@ -90,10 +96,13 @@ export function createContractOperations<const TContract extends Contract, TSend
         });
       }
 
-      registrations.set(options.name, registration);
+      registrations.set(options.name, {
+        registration,
+        dispose: disposeProtocolHandler,
+      });
 
       return () => {
-        if (registrations.get(options.name) !== registration) {
+        if (registrations.get(options.name)?.registration !== registration) {
           return;
         }
 
@@ -103,7 +112,13 @@ export function createContractOperations<const TContract extends Contract, TSend
     },
 
     close(): void {
+      const activeRegistrations = [...registrations.values()];
+
       registrations.clear();
+
+      for (const registration of activeRegistrations) {
+        registration.dispose();
+      }
     },
   };
 }

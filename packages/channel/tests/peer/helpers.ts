@@ -7,6 +7,7 @@ export class TestPeerTransport {
   readonly listeners = new Set<TransportListener<PeerMessage>>();
   readonly sent: PeerMessage[] = [];
 
+  closeCalls = 0;
   closed = false;
 
   send(message: PeerMessage): void {
@@ -22,6 +23,7 @@ export class TestPeerTransport {
   }
 
   close(): void {
+    this.closeCalls += 1;
     this.closed = true;
   }
 

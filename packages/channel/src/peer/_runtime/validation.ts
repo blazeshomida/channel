@@ -1,18 +1,5 @@
-import type { PeerErrorPayload } from "../types";
+import type { PeerErrorPayload, PeerValidationDirection, PeerValidationIssue } from "../types";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-
-export type PeerValidationDirection = "input" | "output" | "item";
-
-export interface PeerValidationIssue {
-  message: string;
-  path?: readonly (string | number)[];
-}
-
-export interface PeerValidationErrorData {
-  operation: string;
-  direction: PeerValidationDirection;
-  issues: readonly PeerValidationIssue[];
-}
 
 interface ValidateArgs {
   schema: StandardSchemaV1 | undefined;

@@ -8,12 +8,10 @@ import type {
   ProtocolStreamOptions,
 } from "./types";
 
-import { close } from "../_actions/close";
-import { handle, hasHandler } from "../_actions/handle";
-import { handleStream, hasStreamHandler } from "../_actions/handle-stream";
 import { notify } from "../_actions/notify";
 import { receive } from "../_actions/receive";
 import { createContext } from "./context";
+import { createPeerClosedError } from "./errors";
 import { createRequestLifecycle } from "./request-lifecycle";
 import { createStreamLifecycle } from "./stream-lifecycle";
 
@@ -41,17 +39,11 @@ export function createProtocolRuntime<TSendOptions = void>(
     handle<TPayload = unknown, TResult = unknown>(
       handleOptions: ProtocolHandleOptions<TPayload, TResult>,
     ) {
-      return handle<TPayload, TResult, TSendOptions>({
-        context,
-        options: handleOptions,
-      });
+      return requests.handle(handleOptions);
     },
 
     hasHandler(name: string): boolean {
-      return hasHandler({
-        context,
-        name,
-      });
+      return requests.hasHandler(name);
     },
 
     stream<TPayload = unknown, TResult = unknown>(
@@ -63,17 +55,11 @@ export function createProtocolRuntime<TSendOptions = void>(
     handleStream<TPayload = unknown, TResult = unknown>(
       handleStreamOptions: ProtocolHandleStreamOptions<TPayload, TResult>,
     ) {
-      return handleStream<TPayload, TResult, TSendOptions>({
-        context,
-        options: handleStreamOptions,
-      });
+      return streams.handle(handleStreamOptions);
     },
 
     hasStreamHandler(name: string): boolean {
-      return hasStreamHandler({
-        context,
-        name,
-      });
+      return streams.hasHandler(name);
     },
 
     notify<TPayload = unknown>(notifyOptions: ProtocolNotifyOptions<TPayload, TSendOptions>): void {
@@ -84,12 +70,18 @@ export function createProtocolRuntime<TSendOptions = void>(
     },
 
     close(): void {
-      close({
-        context,
-        requests,
-        streams,
-        unsubscribe,
-      });
+      if (context.closed) {
+        return;
+      }
+
+      context.closed = true;
+
+      const error = createPeerClosedError();
+
+      requests.close(error);
+      streams.close(error);
+      unsubscribe();
+      context.channel.close();
     },
   };
 }
