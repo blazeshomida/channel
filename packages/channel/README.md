@@ -228,7 +228,7 @@ signal in long-running handlers and generators so they can stop work promptly.
 accept operation-local callbacks. Local callbacks run before the root callback. Exceptions thrown
 by error callbacks are suppressed so they cannot interrupt protocol settlement.
 
-Requests reject and stream iteration throws with a `PeerErrorPayload` for remote failures,
+Requests reject and stream iteration throws with a `PeerError` for remote failures,
 cancellation, validation failures, missing handlers, or peer closure. Event listener and event
 validation failures are reported through error callbacks because events do not return a promise.
 

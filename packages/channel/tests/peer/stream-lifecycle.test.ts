@@ -26,8 +26,8 @@ test("already-aborted stream signals reject without sending messages", async () 
   });
 
   await expect(stream.next()).rejects.toMatchObject({
-    code: "REQUEST_CANCELLED",
-    message: "Request was cancelled.",
+    code: "OPERATION_CANCELLED",
+    message: "Operation was cancelled.",
     data: "not needed",
   });
 
@@ -261,7 +261,7 @@ test("stream signal abort rejects pending pulls and ignores late items", async (
   controller.abort("not needed");
 
   await expect(next).rejects.toMatchObject({
-    code: "REQUEST_CANCELLED",
+    code: "OPERATION_CANCELLED",
     data: "not needed",
   });
 
@@ -354,7 +354,7 @@ test("request and stream ids share one sequence", async () => {
   void stream.return();
 
   await expect(request).rejects.toMatchObject({
-    code: "REQUEST_CANCELLED",
+    code: "OPERATION_CANCELLED",
   });
   await expect(next).resolves.toEqual({
     done: true,

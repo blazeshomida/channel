@@ -1,13 +1,13 @@
 /// <reference lib="dom" />
 
 import type { PeerRequestMessage } from "../../messages";
-import type { PeerDispose, PeerErrorPayload } from "../../types";
+import type { DisposePeerRegistration, PeerError } from "../../types";
 import type { PeerContext } from "../context";
 import type { ProtocolHandleOptions, ProtocolHandler } from "../types";
 
 import { send } from "../../_actions/send";
 import { reportError } from "../context";
-import { createMethodNotFoundError, createRequestFailedError } from "../errors";
+import { createHandlerNotFoundError, createRequestFailedError } from "../errors";
 
 interface RegisteredHandler {
   handler: ProtocolHandler<unknown, unknown>;
@@ -19,11 +19,13 @@ interface CreateRequestHandlersArgs<TSendOptions> {
 }
 
 export interface RequestHandlers {
-  handle<TPayload, TResult>(options: ProtocolHandleOptions<TPayload, TResult>): PeerDispose;
+  handle<TPayload, TResult>(
+    options: ProtocolHandleOptions<TPayload, TResult>,
+  ): DisposePeerRegistration;
   has(name: string): boolean;
   receive(message: PeerRequestMessage): Promise<void>;
   cancel(id: number, reason?: unknown): void;
-  close(error: PeerErrorPayload): void;
+  close(error: PeerError): void;
 }
 
 export function createRequestHandlers<TSendOptions>({
@@ -33,7 +35,9 @@ export function createRequestHandlers<TSendOptions>({
   const handlers = new Map<string, RegisteredHandler>();
 
   return {
-    handle<TPayload, TResult>(options: ProtocolHandleOptions<TPayload, TResult>): PeerDispose {
+    handle<TPayload, TResult>(
+      options: ProtocolHandleOptions<TPayload, TResult>,
+    ): DisposePeerRegistration {
       if (context.closed) {
         throw new Error("Peer is closed.");
       }
@@ -76,7 +80,7 @@ export function createRequestHandlers<TSendOptions>({
             type: "response",
             id: message.id,
             ok: false,
-            error: createMethodNotFoundError(message.name),
+            error: createHandlerNotFoundError(message.name),
           },
         });
 
@@ -121,7 +125,7 @@ export function createRequestHandlers<TSendOptions>({
           context,
           error: responseError,
           errorContext: {
-            type: "handler",
+            type: "request-handler",
             id: message.id,
             name: message.name,
           },

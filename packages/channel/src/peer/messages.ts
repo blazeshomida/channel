@@ -1,4 +1,4 @@
-import type { PeerErrorPayload } from "./types";
+import type { PeerError } from "./types";
 
 export interface PeerRequestMessage {
   type: "request";
@@ -20,7 +20,7 @@ export interface PeerErrorResponseMessage {
   type: "response";
   id: number;
   ok: false;
-  error: PeerErrorPayload;
+  error: PeerError;
 }
 
 export interface PeerNotificationMessage {
@@ -61,7 +61,7 @@ export interface PeerStreamEndMessage {
 export interface PeerStreamErrorMessage {
   type: "stream-error";
   id: number;
-  error: PeerErrorPayload;
+  error: PeerError;
 }
 
 export type PeerMessage =

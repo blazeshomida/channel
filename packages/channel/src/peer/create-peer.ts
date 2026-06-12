@@ -3,7 +3,7 @@ import type { Contract } from "./contract";
 import type {
   CreatePeerOptions,
   EventName,
-  HandleName,
+  HandledOperationName,
   Peer,
   PeerEmitOptions,
   PeerHandleOptions,
@@ -84,7 +84,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
       const response = runtime.request({
         name: options.name,
         payload: options.input,
-        ...("send" in options ? { send: options.send } : {}),
+        ...("sendOptions" in options ? { send: options.sendOptions } : {}),
         ...("signal" in options ? { signal: options.signal } : {}),
         ...("onError" in options ? { onError: options.onError } : {}),
       });
@@ -96,7 +96,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
           schema: operation?.kind === "request" ? operation.output : undefined,
           value,
           operation: options.name,
-          direction: "output",
+          boundary: "output",
         }),
       ) as ReturnType<Peer<TContract, TSendOptions>["request"]>;
     },
@@ -108,7 +108,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
       const protocolStream = runtime.stream({
         name: options.name,
         payload: options.input,
-        ...("send" in options ? { send: options.send } : {}),
+        ...("sendOptions" in options ? { send: options.sendOptions } : {}),
         ...("signal" in options ? { signal: options.signal } : {}),
         ...("onError" in options ? { onError: options.onError } : {}),
       });
@@ -126,11 +126,11 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
       runtime.notify({
         name: options.name,
         payload: options.input,
-        ...("send" in options ? { send: options.send } : {}),
+        ...("sendOptions" in options ? { send: options.sendOptions } : {}),
       });
     },
 
-    handle<const TName extends HandleName<TContract>>(
+    handle<const TName extends HandledOperationName<TContract>>(
       options: PeerHandleOptions<TContract, TName>,
     ) {
       return operations.handle(options);

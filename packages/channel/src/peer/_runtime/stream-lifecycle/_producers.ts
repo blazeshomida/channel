@@ -1,17 +1,17 @@
 /// <reference lib="dom" />
 
 import type { PeerStreamPullMessage, PeerStreamRequestMessage } from "../../messages";
-import type { PeerDispose, PeerErrorHandler, PeerErrorPayload } from "../../types";
+import type { DisposePeerRegistration, PeerError, PeerErrorCallback } from "../../types";
 import type { PeerContext } from "../context";
 import type { ProtocolHandleStreamOptions, ProtocolStreamHandler } from "../types";
 
 import { send } from "../../_actions/send";
 import { reportError } from "../context";
-import { createMethodNotFoundError, createStreamFailedError } from "../errors";
+import { createHandlerNotFoundError, createStreamFailedError } from "../errors";
 
 interface ProducerStream {
   name: string;
-  onError: PeerErrorHandler | undefined;
+  onError: PeerErrorCallback | undefined;
   controller: AbortController;
   iterator: AsyncIterator<unknown>;
   pulling: boolean;
@@ -19,7 +19,7 @@ interface ProducerStream {
 
 interface RegisteredStreamHandler {
   handler: ProtocolStreamHandler<unknown, unknown>;
-  onError: PeerErrorHandler | undefined;
+  onError: PeerErrorCallback | undefined;
 }
 
 interface CreateStreamProducersArgs<TSendOptions> {
@@ -27,12 +27,14 @@ interface CreateStreamProducersArgs<TSendOptions> {
 }
 
 export interface StreamProducers {
-  handle<TPayload, TResult>(options: ProtocolHandleStreamOptions<TPayload, TResult>): PeerDispose;
+  handle<TPayload, TResult>(
+    options: ProtocolHandleStreamOptions<TPayload, TResult>,
+  ): DisposePeerRegistration;
   hasHandler(name: string): boolean;
   receiveRequest(message: PeerStreamRequestMessage): void;
   receivePull(message: PeerStreamPullMessage): Promise<void>;
   cancel(id: number, reason?: unknown): void;
-  close(error: PeerErrorPayload): void;
+  close(error: PeerError): void;
 }
 
 function closeProducer(stream: ProducerStream, reason?: unknown): void {
@@ -69,7 +71,7 @@ export function createStreamProducers<TSendOptions>({
   return {
     handle<TPayload, TResult>(
       options: ProtocolHandleStreamOptions<TPayload, TResult>,
-    ): PeerDispose {
+    ): DisposePeerRegistration {
       if (context.closed) {
         throw new Error("Peer is closed.");
       }
@@ -111,7 +113,7 @@ export function createStreamProducers<TSendOptions>({
           message: {
             type: "stream-error",
             id: message.id,
-            error: createMethodNotFoundError(message.name),
+            error: createHandlerNotFoundError(message.name),
           },
         });
 

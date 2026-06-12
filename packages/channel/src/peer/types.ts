@@ -2,14 +2,14 @@
 
 export type PeerErrorCode =
   | "INVALID_MESSAGE"
-  | "METHOD_NOT_FOUND"
+  | "HANDLER_NOT_FOUND"
+  | "OPERATION_CANCELLED"
   | "REQUEST_FAILED"
-  | "REQUEST_CANCELLED"
   | "STREAM_FAILED"
   | "PEER_CLOSED"
   | "VALIDATION_FAILED";
 
-export interface PeerErrorPayload {
+export interface PeerError {
   code: PeerErrorCode;
   message: string;
   data?: unknown;
@@ -18,14 +18,14 @@ export interface PeerErrorPayload {
 export type PeerErrorContext =
   | { type: "message"; message: unknown }
   | { type: "request"; id: number; name: string }
-  | { type: "handler"; id: number; name: string }
-  | { type: "notification"; name: string }
+  | { type: "request-handler"; id: number; name: string }
+  | { type: "event"; name: string }
   | { type: "response"; id: number }
   | { type: "stream"; id: number; name: string }
   | { type: "stream-handler"; id: number; name: string }
   | { type: "stream-message"; id: number };
 
-export type PeerErrorHandler = (error: unknown, context: PeerErrorContext) => void;
+export type PeerErrorCallback = (error: unknown, context: PeerErrorContext) => void;
 
 export interface PeerHandleContext {
   id: number;
@@ -33,25 +33,25 @@ export interface PeerHandleContext {
   signal: AbortSignal;
 }
 
-export interface PeerNotificationContext {
+export interface PeerEventContext {
   name: string;
 }
 
-export type PeerDispose = () => void;
+export type DisposePeerRegistration = () => void;
 
-export interface PeerStream<TResult> extends AsyncIterableIterator<TResult> {
-  return(): Promise<IteratorResult<TResult>>;
+export interface PeerStream<TItem> extends AsyncIterableIterator<TItem> {
+  return(): Promise<IteratorResult<TItem>>;
 }
 
-export type PeerValidationDirection = "input" | "output" | "item";
+export type PeerValidationBoundary = "input" | "output" | "item";
 
 export interface PeerValidationIssue {
   message: string;
   path?: readonly (string | number)[];
 }
 
-export interface PeerValidationErrorData {
+export interface PeerValidationFailureData {
   operation: string;
-  direction: PeerValidationDirection;
+  boundary: PeerValidationBoundary;
   issues: readonly PeerValidationIssue[];
 }

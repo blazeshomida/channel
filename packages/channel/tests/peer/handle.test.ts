@@ -18,7 +18,7 @@ test("sends method not found response for missing handlers", () => {
       id: 1,
       ok: false,
       error: {
-        code: "METHOD_NOT_FOUND",
+        code: "HANDLER_NOT_FOUND",
         message: 'No handler registered for "missing".',
       },
     },
@@ -271,7 +271,10 @@ test("calls handler onError before root onError for handler failures", async () 
 
   await Promise.resolve();
 
-  expect(errors).toEqual(["local:handler:Handler failed.", "root:handler:Handler failed."]);
+  expect(errors).toEqual([
+    "local:request-handler:Handler failed.",
+    "root:request-handler:Handler failed.",
+  ]);
 
   expect(transport.sent).toEqual([
     {
@@ -315,7 +318,7 @@ test("throwing handler onError callbacks do not prevent error responses", async 
 
   await Promise.resolve();
 
-  expect(errors).toEqual(["local:handler", "root:handler"]);
+  expect(errors).toEqual(["local:request-handler", "root:request-handler"]);
   expect(transport.sent).toEqual([
     {
       type: "response",

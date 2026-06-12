@@ -72,7 +72,7 @@ test("missing stream handlers send method not found errors", () => {
       type: "stream-error",
       id: 1,
       error: {
-        code: "METHOD_NOT_FOUND",
+        code: "HANDLER_NOT_FOUND",
         message: 'No handler registered for "missing".',
       },
     },

@@ -17,8 +17,8 @@ test("already-aborted request signal rejects and sends nothing", async () => {
       signal: controller.signal,
     }),
   ).rejects.toMatchObject({
-    code: "REQUEST_CANCELLED",
-    message: "Request was cancelled.",
+    code: "OPERATION_CANCELLED",
+    message: "Operation was cancelled.",
     data: "not needed",
   });
 
@@ -38,8 +38,8 @@ test("aborting a pending request rejects and sends a cancel message", async () =
   controller.abort("not needed");
 
   await expect(promise).rejects.toMatchObject({
-    code: "REQUEST_CANCELLED",
-    message: "Request was cancelled.",
+    code: "OPERATION_CANCELLED",
+    message: "Operation was cancelled.",
     data: "not needed",
   });
 
@@ -107,7 +107,7 @@ test("late responses after local cancellation are ignored", async () => {
   controller.abort("not needed");
 
   await expect(promise).rejects.toMatchObject({
-    code: "REQUEST_CANCELLED",
+    code: "OPERATION_CANCELLED",
   });
 
   transport.emit({
@@ -141,7 +141,7 @@ test("late responses remain ignored after cancelled request tracking is bounded"
 
     cancellations.push(
       expect(promise).rejects.toMatchObject({
-        code: "REQUEST_CANCELLED",
+        code: "OPERATION_CANCELLED",
       }),
     );
   }

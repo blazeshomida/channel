@@ -1,5 +1,5 @@
 import type { PeerRequestMessage, PeerResponseMessage } from "../../messages";
-import type { PeerDispose, PeerErrorPayload } from "../../types";
+import type { DisposePeerRegistration, PeerError } from "../../types";
 import type { PeerContext } from "../context";
 import type { ProtocolHandleOptions, ProtocolRequestOptions } from "../types";
 
@@ -14,13 +14,15 @@ export interface RequestLifecycle<TSendOptions> {
   create<TPayload, TResult>(
     options: ProtocolRequestOptions<TPayload, TSendOptions>,
   ): Promise<TResult>;
-  handle<TPayload, TResult>(options: ProtocolHandleOptions<TPayload, TResult>): PeerDispose;
+  handle<TPayload, TResult>(
+    options: ProtocolHandleOptions<TPayload, TResult>,
+  ): DisposePeerRegistration;
   hasHandler(name: string): boolean;
   getNextId: () => number;
   receiveResponse(message: PeerResponseMessage): void;
   receiveRequest(message: PeerRequestMessage): Promise<void>;
   cancelHandler(id: number, reason?: unknown): void;
-  close(error: PeerErrorPayload): void;
+  close(error: PeerError): void;
 }
 
 export function createRequestLifecycle<TSendOptions>({

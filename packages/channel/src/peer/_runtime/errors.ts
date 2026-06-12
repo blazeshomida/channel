@@ -1,10 +1,6 @@
-import type { PeerErrorCode, PeerErrorPayload } from "../types";
+import type { PeerError, PeerErrorCode } from "../types";
 
-export function createPeerError(
-  code: PeerErrorCode,
-  message: string,
-  data?: unknown,
-): PeerErrorPayload {
+export function createPeerError(code: PeerErrorCode, message: string, data?: unknown): PeerError {
   return data === undefined ? { code, message } : { code, message, data };
 }
 
@@ -12,7 +8,7 @@ export function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function isPeerErrorPayload(error: unknown): error is PeerErrorPayload {
+function isPeerError(error: unknown): error is PeerError {
   return (
     typeof error === "object" &&
     error !== null &&
@@ -23,26 +19,22 @@ function isPeerErrorPayload(error: unknown): error is PeerErrorPayload {
   );
 }
 
-export function createRequestFailedError(error: unknown): PeerErrorPayload {
-  return isPeerErrorPayload(error)
-    ? error
-    : createPeerError("REQUEST_FAILED", getErrorMessage(error));
+export function createRequestFailedError(error: unknown): PeerError {
+  return isPeerError(error) ? error : createPeerError("REQUEST_FAILED", getErrorMessage(error));
 }
 
-export function createRequestCancelledError(reason?: unknown): PeerErrorPayload {
-  return createPeerError("REQUEST_CANCELLED", "Request was cancelled.", reason);
+export function createOperationCancelledError(reason?: unknown): PeerError {
+  return createPeerError("OPERATION_CANCELLED", "Operation was cancelled.", reason);
 }
 
-export function createStreamFailedError(error: unknown): PeerErrorPayload {
-  return isPeerErrorPayload(error)
-    ? error
-    : createPeerError("STREAM_FAILED", getErrorMessage(error));
+export function createStreamFailedError(error: unknown): PeerError {
+  return isPeerError(error) ? error : createPeerError("STREAM_FAILED", getErrorMessage(error));
 }
 
-export function createPeerClosedError(): PeerErrorPayload {
+export function createPeerClosedError(): PeerError {
   return createPeerError("PEER_CLOSED", "Peer is closed.");
 }
 
-export function createMethodNotFoundError(name: string): PeerErrorPayload {
-  return createPeerError("METHOD_NOT_FOUND", `No handler registered for "${name}".`);
+export function createHandlerNotFoundError(name: string): PeerError {
+  return createPeerError("HANDLER_NOT_FOUND", `No handler registered for "${name}".`);
 }

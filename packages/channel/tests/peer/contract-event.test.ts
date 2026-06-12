@@ -291,7 +291,7 @@ test("invalid events skip listeners and report through root onError", async () =
       message: 'Validation failed for "log" input.',
       data: {
         operation: "log",
-        direction: "input",
+        boundary: "input",
         issues: [{ message: "Expected a non-empty message." }],
       },
     },
@@ -371,10 +371,7 @@ test("listener errors report through local and root error handlers", () => {
     },
   });
 
-  expect(errors).toEqual([
-    "local:notification:Listener failed.",
-    "root:notification:Error: Listener failed.",
-  ]);
+  expect(errors).toEqual(["local:event:Listener failed.", "root:event:Error: Listener failed."]);
 });
 
 test("throwing event onError callbacks do not escape delivery", () => {
@@ -415,5 +412,5 @@ test("throwing event onError callbacks do not escape delivery", () => {
       },
     });
   }).not.toThrow();
-  expect(errors).toEqual(["local:notification", "root:notification"]);
+  expect(errors).toEqual(["local:event", "root:event"]);
 });

@@ -10,13 +10,13 @@ import type {
   PeerStreamPullMessage,
   PeerStreamRequestMessage,
 } from "../messages";
-import type { PeerErrorPayload } from "../types";
+import type { PeerError } from "../types";
 
 const peerErrorCodes = new Set<string>([
   "INVALID_MESSAGE",
-  "METHOD_NOT_FOUND",
+  "HANDLER_NOT_FOUND",
+  "OPERATION_CANCELLED",
   "PEER_CLOSED",
-  "REQUEST_CANCELLED",
   "REQUEST_FAILED",
   "STREAM_FAILED",
   "VALIDATION_FAILED",
@@ -40,7 +40,7 @@ function hasName(message: Record<PropertyKey, unknown>): boolean {
   return typeof message["name"] === "string";
 }
 
-function isPeerErrorPayload(value: unknown): value is PeerErrorPayload {
+function isPeerError(value: unknown): value is PeerError {
   return (
     isRecord(value) &&
     typeof value["code"] === "string" &&
@@ -65,7 +65,7 @@ function isCompletePeerMessage(message: unknown): message is PeerMessage {
 
       return message["ok"]
         ? hasOwn(message, "payload")
-        : hasOwn(message, "error") && isPeerErrorPayload(message["error"]);
+        : hasOwn(message, "error") && isPeerError(message["error"]);
     case "notification":
       return hasName(message) && hasOwn(message, "payload");
     case "cancel":
@@ -75,7 +75,7 @@ function isCompletePeerMessage(message: unknown): message is PeerMessage {
     case "stream-item":
       return hasId(message) && hasOwn(message, "payload");
     case "stream-error":
-      return hasId(message) && isPeerErrorPayload(message["error"]);
+      return hasId(message) && isPeerError(message["error"]);
     default:
       return false;
   }

@@ -44,6 +44,15 @@ function assertContractTypes(): void {
       },
     }),
   });
+  const peerWithSendOptions = createPeer({
+    contract,
+    channel: createChannel<unknown, unknown, { transfer?: readonly ArrayBuffer[] }>({
+      send() {},
+      subscribe() {
+        return () => {};
+      },
+    }),
+  });
 
   const response: Promise<string> = peer.request({
     name: "double",
@@ -74,6 +83,37 @@ function assertContractTypes(): void {
       expect(input).toBeTypeOf("string");
     },
   });
+
+  void peerWithSendOptions.request({
+    name: "double",
+    input: {
+      value: "21",
+    },
+    sendOptions: {
+      transfer: [],
+    },
+  });
+  peerWithSendOptions.stream({
+    name: "count",
+    input: {
+      count: 1,
+    },
+    sendOptions: {
+      transfer: [],
+    },
+  });
+  peerWithSendOptions.emit({
+    name: "log",
+    input: {
+      message: "hello",
+    },
+    sendOptions: {
+      transfer: [],
+    },
+  });
+
+  // @ts-expect-error Peer operations use sendOptions for transport-specific options.
+  void peerWithSendOptions.request({ name: "double", input: { value: "21" }, send: {} });
 
   // @ts-expect-error Events cannot be requested.
   void peer.request({ name: "log", input: { message: "hello" } });
