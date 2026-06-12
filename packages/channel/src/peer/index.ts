@@ -33,9 +33,7 @@ export type {
   PeerHandleContext,
   PeerNotificationContext,
   PeerStream,
-} from "./types";
-export type {
   PeerValidationDirection,
   PeerValidationErrorData,
   PeerValidationIssue,
-} from "./_runtime/validation";
+} from "./types";

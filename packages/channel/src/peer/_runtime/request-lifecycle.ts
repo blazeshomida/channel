@@ -1,9 +1,9 @@
 /// <reference lib="dom" />
 
 import type { PeerCancelMessage, PeerRequestMessage, PeerResponseMessage } from "../messages";
-import type { PeerErrorHandler, PeerErrorPayload } from "../types";
+import type { PeerDispose, PeerErrorHandler, PeerErrorPayload } from "../types";
 import type { PeerContext } from "./context";
-import type { ProtocolRequestOptions } from "./types";
+import type { ProtocolHandleOptions, ProtocolHandler, ProtocolRequestOptions } from "./types";
 
 import { send } from "../_actions/send";
 import { reportError } from "./context";
@@ -25,6 +25,11 @@ interface PendingRequest {
   reject(reason: unknown): void;
 }
 
+interface RegisteredHandler {
+  handler: ProtocolHandler<unknown, unknown>;
+  onError: PeerErrorHandler | undefined;
+}
+
 interface CreateRequestLifecycleArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;
 }
@@ -33,6 +38,8 @@ export interface RequestLifecycle<TSendOptions> {
   create<TPayload, TResult>(
     options: ProtocolRequestOptions<TPayload, TSendOptions>,
   ): Promise<TResult>;
+  handle<TPayload, TResult>(options: ProtocolHandleOptions<TPayload, TResult>): PeerDispose;
+  hasHandler(name: string): boolean;
   getNextId: () => number;
   receiveResponse(message: PeerResponseMessage): void;
   receiveRequest(message: PeerRequestMessage): Promise<void>;
@@ -69,6 +76,7 @@ export function createRequestLifecycle<TSendOptions>({
   const cancelledRequests = new Set<number>();
   const cancelledRequestOrder: number[] = [];
   const activeHandlers = new Map<number, AbortController>();
+  const handlers = new Map<string, RegisteredHandler>();
 
   const getNextId = (): number => {
     previousId += 1;
@@ -159,6 +167,38 @@ export function createRequestLifecycle<TSendOptions>({
       });
     },
 
+    handle<TPayload, TResult>(options: ProtocolHandleOptions<TPayload, TResult>): PeerDispose {
+      if (context.closed) {
+        throw new Error("Peer is closed.");
+      }
+
+      if (handlers.has(options.name)) {
+        throw new Error(`Handler already registered for "${options.name}".`);
+      }
+
+      const registeredHandler: RegisteredHandler = {
+        handler: (payload, handlerContext) => {
+          // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Peer payload types are compile-time contracts; runtime schemas belong to the contract layer.
+          return options.handler(payload as TPayload, handlerContext);
+        },
+        onError: options.onError,
+      };
+
+      handlers.set(options.name, registeredHandler);
+
+      return () => {
+        if (handlers.get(options.name) !== registeredHandler) {
+          return;
+        }
+
+        handlers.delete(options.name);
+      };
+    },
+
+    hasHandler(name) {
+      return handlers.has(name);
+    },
+
     getNextId,
 
     receiveResponse(message) {
@@ -206,7 +246,7 @@ export function createRequestLifecycle<TSendOptions>({
     },
 
     async receiveRequest(message) {
-      const registeredHandler = context.handlers.get(message.name);
+      const registeredHandler = handlers.get(message.name);
 
       if (registeredHandler === undefined) {
         send({
@@ -298,6 +338,7 @@ export function createRequestLifecycle<TSendOptions>({
       cancelledRequests.clear();
       cancelledRequestOrder.length = 0;
       activeHandlers.clear();
+      handlers.clear();
 
       for (const request of pending) {
         request.cleanup();

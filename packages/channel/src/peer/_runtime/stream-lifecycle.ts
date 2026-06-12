@@ -8,9 +8,13 @@ import type {
   PeerStreamPullMessage,
   PeerStreamRequestMessage,
 } from "../messages";
-import type { PeerErrorHandler, PeerErrorPayload, PeerStream } from "../types";
+import type { PeerDispose, PeerErrorHandler, PeerErrorPayload, PeerStream } from "../types";
 import type { PeerContext } from "./context";
-import type { ProtocolStreamOptions } from "./types";
+import type {
+  ProtocolHandleStreamOptions,
+  ProtocolStreamHandler,
+  ProtocolStreamOptions,
+} from "./types";
 
 import { send } from "../_actions/send";
 import { reportError } from "./context";
@@ -43,6 +47,11 @@ interface ProducerStream {
   pulling: boolean;
 }
 
+interface RegisteredStreamHandler {
+  handler: ProtocolStreamHandler<unknown, unknown>;
+  onError: PeerErrorHandler | undefined;
+}
+
 interface CreateStreamLifecycleArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;
   getNextId: () => number;
@@ -52,6 +61,8 @@ export interface StreamLifecycle<TSendOptions> {
   create<TPayload, TResult>(
     options: ProtocolStreamOptions<TPayload, TSendOptions>,
   ): PeerStream<TResult>;
+  handle<TPayload, TResult>(options: ProtocolHandleStreamOptions<TPayload, TResult>): PeerDispose;
+  hasHandler(name: string): boolean;
   receiveRequest(message: PeerStreamRequestMessage): void;
   receivePull(message: PeerStreamPullMessage): Promise<void>;
   receiveItem(message: PeerStreamItemMessage): void;
@@ -110,6 +121,7 @@ export function createStreamLifecycle<TSendOptions>({
   const consumers = new Map<number, ConsumerStream>();
   const cancelledConsumers = new Set<number>();
   const producers = new Map<number, ProducerStream>();
+  const handlers = new Map<string, RegisteredStreamHandler>();
 
   const reportUnknownStreamMessage = (id: number): void => {
     reportError({
@@ -359,8 +371,42 @@ export function createStreamLifecycle<TSendOptions>({
       return iterator;
     },
 
+    handle<TPayload, TResult>(
+      options: ProtocolHandleStreamOptions<TPayload, TResult>,
+    ): PeerDispose {
+      if (context.closed) {
+        throw new Error("Peer is closed.");
+      }
+
+      if (handlers.has(options.name)) {
+        throw new Error(`Stream handler already registered for "${options.name}".`);
+      }
+
+      const registeredHandler: RegisteredStreamHandler = {
+        handler: (payload, handlerContext) => {
+          // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Peer payload types are compile-time contracts; runtime schemas belong to the contract layer.
+          return options.handler(payload as TPayload, handlerContext);
+        },
+        onError: options.onError,
+      };
+
+      handlers.set(options.name, registeredHandler);
+
+      return () => {
+        if (handlers.get(options.name) !== registeredHandler) {
+          return;
+        }
+
+        handlers.delete(options.name);
+      };
+    },
+
+    hasHandler(name) {
+      return handlers.has(name);
+    },
+
     receiveRequest(message) {
-      const registeredHandler = context.streamHandlers.get(message.name);
+      const registeredHandler = handlers.get(message.name);
 
       if (registeredHandler === undefined) {
         send({
@@ -542,6 +588,7 @@ export function createStreamLifecycle<TSendOptions>({
       consumers.clear();
       cancelledConsumers.clear();
       producers.clear();
+      handlers.clear();
 
       for (const consumer of pendingConsumers) {
         consumer.fail(error);

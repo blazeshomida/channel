@@ -3,20 +3,12 @@ import type { PeerMessage } from "../messages";
 import type { PeerErrorContext, PeerErrorHandler } from "../types";
 import type { CreateProtocolRuntimeOptions, ProtocolNotificationListener } from "./types";
 
-import { createHandlerRegistry, type HandlerRegistry } from "../_registries/handlers";
-import {
-  createStreamHandlerRegistry,
-  type StreamHandlerRegistry,
-} from "../_registries/stream-handlers";
-
 interface CreateContextArgs<TSendOptions> {
   options: CreateProtocolRuntimeOptions<TSendOptions>;
 }
 
 export interface PeerContext<TSendOptions = void> {
   channel: Channel<PeerMessage, PeerMessage, TSendOptions>;
-  handlers: HandlerRegistry;
-  streamHandlers: StreamHandlerRegistry;
   onNotification?: ProtocolNotificationListener<unknown>;
   closed: boolean;
   onError?: PeerErrorHandler;
@@ -27,8 +19,6 @@ export function createContext<TSendOptions>({
 }: CreateContextArgs<TSendOptions>): PeerContext<TSendOptions> {
   const context: PeerContext<TSendOptions> = {
     channel: options.channel,
-    handlers: createHandlerRegistry(),
-    streamHandlers: createStreamHandlerRegistry(),
     closed: false,
   };
 
