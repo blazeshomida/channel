@@ -83,7 +83,6 @@ starting_issue_count="${#issue_files[@]}"
   --cd "$REPO_ROOT" \
   --add-dir "$GIT_COMMON_DIR" \
   --sandbox workspace-write \
-  --ask-for-approval never \
   --color always \
   --output-last-message "$RESULT_FILE" \
   -
