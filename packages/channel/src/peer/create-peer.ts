@@ -1,5 +1,5 @@
 import type { Channel } from "../channel";
-import type { CreateProtocolRuntimeOptions, ProtocolStreamHandler } from "./_runtime/types";
+import type { CreateProtocolRuntimeOptions } from "./_runtime/types";
 import type { Contract } from "./contract";
 import type {
   CreatePeerOptions,
@@ -18,6 +18,7 @@ import type {
 import type { PeerMessage } from "./messages";
 
 import { createContractEvents } from "./_contract/events";
+import { createContractOperations } from "./_contract/operations";
 import { createValidatedStream } from "./_contract/validated-stream";
 import { createProtocolRuntime } from "./_runtime/create-protocol-runtime";
 import { validate } from "./_runtime/validation";
@@ -45,6 +46,10 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
   }
 
   const runtime = createProtocolRuntime(runtimeOptions);
+  const operations = createContractOperations({
+    contract,
+    runtime,
+  });
 
   return {
     request<const TName extends RequestName<TContract>>(
@@ -102,60 +107,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
     handle<const TName extends HandleName<TContract>>(
       options: PeerHandleOptions<TContract, TName>,
     ) {
-      const operation = contract.operations[options.name];
-
-      if (operation?.kind === "request") {
-        // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Runtime contract dispatch narrows the unified handler to a request handler.
-        const handler = options.handler as (
-          input: unknown,
-          context: Parameters<typeof options.handler>[1],
-        ) => unknown;
-
-        return runtime.handle({
-          name: options.name,
-          async handler(input, context) {
-            const validatedInput = await validate({
-              schema: operation.input,
-              value: input,
-              operation: options.name,
-              direction: "input",
-            });
-
-            if (context.signal.aborted) {
-              throw context.signal.reason;
-            }
-
-            return handler(validatedInput, context);
-          },
-          ...("onError" in options ? { onError: options.onError } : {}),
-        });
-      }
-
-      if (operation?.kind === "stream") {
-        // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Runtime contract dispatch narrows the unified handler to a stream handler.
-        const handler = options.handler as ProtocolStreamHandler<unknown, unknown>;
-
-        return runtime.handleStream({
-          name: options.name,
-          async *handler(input, context) {
-            const validatedInput = await validate({
-              schema: operation.input,
-              value: input,
-              operation: options.name,
-              direction: "input",
-            });
-
-            if (context.signal.aborted) {
-              return;
-            }
-
-            yield* handler(validatedInput, context);
-          },
-          ...("onError" in options ? { onError: options.onError } : {}),
-        });
-      }
-
-      throw new Error(`Operation "${options.name}" cannot be handled.`);
+      return operations.handle(options);
     },
 
     on<const TName extends EventName<TContract>>(options: PeerOnOptions<TContract, TName>) {
@@ -184,6 +136,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
 
     close() {
       events.close();
+      operations.close();
       runtime.close();
     },
   };
