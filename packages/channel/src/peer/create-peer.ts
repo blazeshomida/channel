@@ -34,7 +34,8 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
   });
   const runtimeOptions = {
     // The protocol is private; the contract peer owns this transport seam.
-    // eslint-disable-next-line typescript/no-unsafe-type-assertion -- createPeer is the sole adapter from the public unknown channel to the private peer protocol.
+    // Type boundary: createPeer adapts the public unknown channel to the private peer protocol.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     channel: channel as Channel<PeerMessage, PeerMessage, TSendOptions>,
     onNotification(input, context) {
       events.receive(input, context);
@@ -51,6 +52,22 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
     runtime,
   });
 
+  function addEventListener<TName extends EventName<TContract>>(
+    options: PeerOnOptions<TContract, TName>,
+    once: boolean,
+  ) {
+    // Type boundary: the selected event operation determines the validated listener input type.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const listener = options.listener as Parameters<typeof events.add>[0]["listener"];
+
+    return events.add({
+      name: options.name,
+      listener,
+      ...("onError" in options ? { onError: options.onError } : {}),
+      once,
+    });
+  }
+
   return {
     request<const TName extends RequestName<TContract>>(
       options: PeerRequestOptions<TContract, TName, TSendOptions>,
@@ -64,7 +81,8 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
         ...("onError" in options ? { onError: options.onError } : {}),
       });
 
-      // eslint-disable-next-line typescript/no-unsafe-type-assertion -- The selected contract operation determines the validated response type.
+      // Type boundary: the selected contract operation determines the validated response type.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       return response.then((value) =>
         validate({
           schema: operation?.kind === "request" ? operation.output : undefined,
@@ -111,27 +129,11 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
     },
 
     on<const TName extends EventName<TContract>>(options: PeerOnOptions<TContract, TName>) {
-      // eslint-disable-next-line typescript/no-unsafe-type-assertion -- The selected event operation determines the validated listener input type.
-      const listener = options.listener as Parameters<typeof events.add>[0]["listener"];
-
-      return events.add({
-        name: options.name,
-        listener,
-        ...("onError" in options ? { onError: options.onError } : {}),
-        once: false,
-      });
+      return addEventListener(options, false);
     },
 
     once<const TName extends EventName<TContract>>(options: PeerOnceOptions<TContract, TName>) {
-      // eslint-disable-next-line typescript/no-unsafe-type-assertion -- The selected event operation determines the validated listener input type.
-      const listener = options.listener as Parameters<typeof events.add>[0]["listener"];
-
-      return events.add({
-        name: options.name,
-        listener,
-        ...("onError" in options ? { onError: options.onError } : {}),
-        once: true,
-      });
+      return addEventListener(options, true);
     },
 
     close() {

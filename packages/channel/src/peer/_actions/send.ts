@@ -11,7 +11,8 @@ interface SendArgs<TSendOptions> {
 function createTransportSendArgs<TSendOptions>(
   options: TSendOptions | undefined,
 ): TransportSendArgs<TSendOptions> {
-  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Transport options are represented as a conditional rest tuple at the channel boundary.
+  // Type boundary: transport options are represented as a conditional rest tuple.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return (options === undefined ? [] : [options]) as TransportSendArgs<TSendOptions>;
 }
 
