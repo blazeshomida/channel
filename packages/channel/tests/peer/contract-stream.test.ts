@@ -154,7 +154,7 @@ test("invalid stream input fails before the handler runs", async () => {
     code: "VALIDATION_FAILED",
     data: {
       operation: "count",
-      direction: "input",
+      boundary: "input",
       issues: [{ message: "Expected a positive count." }],
     },
   });
@@ -208,7 +208,7 @@ test("invalid stream items fail the caller and cancel the producer", async () =>
     code: "VALIDATION_FAILED",
     data: {
       operation: "values",
-      direction: "item",
+      boundary: "item",
       issues: [{ message: "Expected a positive item." }],
     },
   });

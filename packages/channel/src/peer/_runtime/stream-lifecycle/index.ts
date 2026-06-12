@@ -5,7 +5,7 @@ import type {
   PeerStreamPullMessage,
   PeerStreamRequestMessage,
 } from "../../messages";
-import type { PeerDispose, PeerErrorPayload, PeerStream } from "../../types";
+import type { DisposePeerRegistration, PeerError, PeerStream } from "../../types";
 import type { PeerContext } from "../context";
 import type { ProtocolHandleStreamOptions, ProtocolStreamOptions } from "../types";
 
@@ -21,7 +21,9 @@ export interface StreamLifecycle<TSendOptions> {
   create<TPayload, TResult>(
     options: ProtocolStreamOptions<TPayload, TSendOptions>,
   ): PeerStream<TResult>;
-  handle<TPayload, TResult>(options: ProtocolHandleStreamOptions<TPayload, TResult>): PeerDispose;
+  handle<TPayload, TResult>(
+    options: ProtocolHandleStreamOptions<TPayload, TResult>,
+  ): DisposePeerRegistration;
   hasHandler(name: string): boolean;
   receiveRequest(message: PeerStreamRequestMessage): void;
   receivePull(message: PeerStreamPullMessage): Promise<void>;
@@ -29,7 +31,7 @@ export interface StreamLifecycle<TSendOptions> {
   receiveEnd(message: PeerStreamEndMessage): void;
   receiveError(message: PeerStreamErrorMessage): void;
   cancelProducer(id: number, reason?: unknown): void;
-  close(error: PeerErrorPayload): void;
+  close(error: PeerError): void;
 }
 
 export function createStreamLifecycle<TSendOptions>({

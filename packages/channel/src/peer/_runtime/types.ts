@@ -3,10 +3,10 @@
 import type { Channel } from "../../channel";
 import type { PeerMessage } from "../messages";
 import type {
-  PeerDispose,
-  PeerErrorHandler,
+  DisposePeerRegistration,
+  PeerEventContext,
+  PeerErrorCallback,
   PeerHandleContext,
-  PeerNotificationContext,
   PeerStream,
 } from "../types";
 
@@ -15,14 +15,14 @@ export interface ProtocolRequestOptions<TPayload, TSendOptions> {
   payload: TPayload;
   send?: TSendOptions;
   signal?: AbortSignal;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export interface ProtocolNotifyOptions<TPayload, TSendOptions> {
   name: string;
   payload: TPayload;
   send?: TSendOptions;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export interface ProtocolStreamOptions<TPayload, TSendOptions> {
@@ -30,7 +30,7 @@ export interface ProtocolStreamOptions<TPayload, TSendOptions> {
   payload: TPayload;
   send?: TSendOptions;
   signal?: AbortSignal;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export type ProtocolStreamHandler<TPayload, TResult> = (
@@ -45,25 +45,25 @@ export type ProtocolHandler<TPayload, TResult> = (
 
 export type ProtocolNotificationListener<TPayload> = (
   payload: TPayload,
-  context: PeerNotificationContext,
+  context: PeerEventContext,
 ) => void;
 
 export interface ProtocolHandleOptions<TPayload, TResult> {
   name: string;
   handler: ProtocolHandler<TPayload, TResult>;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export interface ProtocolHandleStreamOptions<TPayload, TResult> {
   name: string;
   handler: ProtocolStreamHandler<TPayload, TResult>;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export interface CreateProtocolRuntimeOptions<TSendOptions = void> {
   channel: Channel<unknown, PeerMessage, TSendOptions>;
   onNotification?: ProtocolNotificationListener<unknown>;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export interface ProtocolRuntime<TSendOptions = void> {
@@ -72,14 +72,14 @@ export interface ProtocolRuntime<TSendOptions = void> {
   ): Promise<TResult>;
   handle<TPayload = unknown, TResult = unknown>(
     options: ProtocolHandleOptions<TPayload, TResult>,
-  ): PeerDispose;
+  ): DisposePeerRegistration;
   hasHandler(name: string): boolean;
   stream<TPayload = unknown, TResult = unknown>(
     options: ProtocolStreamOptions<TPayload, TSendOptions>,
   ): PeerStream<TResult>;
   handleStream<TPayload = unknown, TResult = unknown>(
     options: ProtocolHandleStreamOptions<TPayload, TResult>,
-  ): PeerDispose;
+  ): DisposePeerRegistration;
   hasStreamHandler(name: string): boolean;
   notify<TPayload = unknown>(options: ProtocolNotifyOptions<TPayload, TSendOptions>): void;
   close(): void;

@@ -1,9 +1,9 @@
 import type { Channel } from "../../channel";
 import type { PeerMessage } from "../messages";
-import type { PeerErrorContext, PeerErrorHandler } from "../types";
+import type { PeerErrorCallback, PeerErrorContext } from "../types";
 import type { CreateProtocolRuntimeOptions, ProtocolNotificationListener } from "./types";
 
-import { invokeErrorHandler } from "./error-handler";
+import { invokeErrorCallback } from "./error-callback";
 
 interface CreateContextArgs<TSendOptions> {
   options: CreateProtocolRuntimeOptions<TSendOptions>;
@@ -13,7 +13,7 @@ export interface PeerContext<TSendOptions = void> {
   channel: Channel<unknown, PeerMessage, TSendOptions>;
   onNotification?: ProtocolNotificationListener<unknown>;
   closed: boolean;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export function createContext<TSendOptions>({
@@ -39,7 +39,7 @@ interface ReportErrorArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;
   error: unknown;
   errorContext: PeerErrorContext;
-  onError?: PeerErrorHandler | undefined;
+  onError?: PeerErrorCallback | undefined;
 }
 
 export function reportError<TSendOptions>({
@@ -48,8 +48,8 @@ export function reportError<TSendOptions>({
   errorContext,
   onError,
 }: ReportErrorArgs<TSendOptions>): void {
-  invokeErrorHandler(onError, error, errorContext);
-  invokeErrorHandler(context.onError, error, errorContext);
+  invokeErrorCallback(onError, error, errorContext);
+  invokeErrorCallback(context.onError, error, errorContext);
 }
 
 interface AssertOpenArgs<TSendOptions> {

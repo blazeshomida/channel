@@ -1,7 +1,7 @@
 import type { ProtocolRuntime, ProtocolStreamHandler } from "../_runtime/types";
 import type { Contract } from "../contract";
-import type { HandleName, PeerHandleOptions } from "../contract-types";
-import type { PeerDispose } from "../types";
+import type { HandledOperationName, PeerHandleOptions } from "../contract-types";
+import type { DisposePeerRegistration } from "../types";
 
 import { validate } from "../_runtime/validation";
 
@@ -11,9 +11,9 @@ interface CreateContractOperationsArgs<TContract extends Contract, TSendOptions>
 }
 
 export interface ContractOperations<TContract extends Contract> {
-  handle<TName extends HandleName<TContract>>(
+  handle<TName extends HandledOperationName<TContract>>(
     options: PeerHandleOptions<TContract, TName>,
-  ): PeerDispose;
+  ): DisposePeerRegistration;
   close(): void;
 }
 
@@ -25,14 +25,14 @@ export function createContractOperations<const TContract extends Contract, TSend
     string,
     {
       registration: symbol;
-      dispose: PeerDispose;
+      dispose: DisposePeerRegistration;
     }
   >();
 
   return {
-    handle<TName extends HandleName<TContract>>(
+    handle<TName extends HandledOperationName<TContract>>(
       options: PeerHandleOptions<TContract, TName>,
-    ): PeerDispose {
+    ): DisposePeerRegistration {
       const operation = contract.operations[options.name];
 
       if (operation?.kind !== "request" && operation?.kind !== "stream") {
@@ -45,7 +45,7 @@ export function createContractOperations<const TContract extends Contract, TSend
       }
 
       const registration = Symbol(options.name);
-      let disposeProtocolHandler: PeerDispose;
+      let disposeProtocolHandler: DisposePeerRegistration;
 
       if (operation.kind === "request") {
         // Type boundary: contract dispatch narrows the unified handler to a request handler.
@@ -62,7 +62,7 @@ export function createContractOperations<const TContract extends Contract, TSend
               schema: operation.input,
               value: input,
               operation: options.name,
-              direction: "input",
+              boundary: "input",
             });
 
             if (context.signal.aborted) {
@@ -85,7 +85,7 @@ export function createContractOperations<const TContract extends Contract, TSend
               schema: operation.input,
               value: input,
               operation: options.name,
-              direction: "input",
+              boundary: "input",
             });
 
             if (context.signal.aborted) {

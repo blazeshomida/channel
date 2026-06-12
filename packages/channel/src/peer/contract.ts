@@ -44,8 +44,8 @@ export interface EventOperation<TInput = unknown, TListenerInput = TInput> {
 export type Operation = RequestOperation | StreamOperation | EventOperation;
 export type ContractOperations = Record<string, Operation>;
 
-export interface Contract<TConfig extends ContractOperations = ContractOperations> {
-  readonly operations: TConfig;
+export interface Contract<TOperations extends ContractOperations = ContractOperations> {
+  readonly operations: TOperations;
 }
 
 interface RequestSchemaOptions<TInput extends Schema, TOutput extends Schema> {

@@ -160,7 +160,7 @@ test("invalid request input rejects before the handler runs", async () => {
     code: "VALIDATION_FAILED",
     data: {
       operation: "double",
-      direction: "input",
+      boundary: "input",
       issues: [{ message: "Expected a positive value." }],
     },
   });
@@ -212,7 +212,7 @@ test("invalid request output rejects at the caller", async () => {
     code: "VALIDATION_FAILED",
     data: {
       operation: "calculate",
-      direction: "output",
+      boundary: "output",
       issues: [{ message: "Expected a positive result." }],
     },
   });
@@ -239,7 +239,7 @@ test("missing request handlers reject through the contract peer", async () => {
       input: null,
     }),
   ).rejects.toMatchObject({
-    code: "METHOD_NOT_FOUND",
+    code: "HANDLER_NOT_FOUND",
   });
 });
 
@@ -329,7 +329,7 @@ test("request cancellation still aborts contract handlers", async () => {
   controller.abort("not needed");
 
   await expect(result).rejects.toMatchObject({
-    code: "REQUEST_CANCELLED",
+    code: "OPERATION_CANCELLED",
     data: "not needed",
   });
   expect(handlerSignal?.aborted).toBe(true);

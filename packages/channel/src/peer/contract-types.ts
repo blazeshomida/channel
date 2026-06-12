@@ -9,10 +9,10 @@ import type {
   StreamOperation,
 } from "./contract";
 import type {
-  PeerDispose,
-  PeerErrorHandler,
+  DisposePeerRegistration,
+  PeerEventContext,
+  PeerErrorCallback,
   PeerHandleContext,
-  PeerNotificationContext,
   PeerStream,
 } from "./types";
 
@@ -28,7 +28,9 @@ type NamesByOperation<TContract extends Contract, TOperation> = {
 export type RequestName<TContract extends Contract> = NamesByOperation<TContract, RequestOperation>;
 export type StreamName<TContract extends Contract> = NamesByOperation<TContract, StreamOperation>;
 export type EventName<TContract extends Contract> = NamesByOperation<TContract, EventOperation>;
-export type HandleName<TContract extends Contract> = RequestName<TContract> | StreamName<TContract>;
+export type HandledOperationName<TContract extends Contract> =
+  | RequestName<TContract>
+  | StreamName<TContract>;
 
 type OperationAt<
   TContract extends Contract,
@@ -65,9 +67,9 @@ export interface PeerRequestOptions<
 > {
   name: TName;
   input: RequestInput<OperationAt<TContract, TName>>;
-  send?: TSendOptions;
+  sendOptions?: TSendOptions;
   signal?: AbortSignal;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export interface PeerStreamOptions<
@@ -77,9 +79,9 @@ export interface PeerStreamOptions<
 > {
   name: TName;
   input: StreamInput<OperationAt<TContract, TName>>;
-  send?: TSendOptions;
+  sendOptions?: TSendOptions;
   signal?: AbortSignal;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export interface PeerEmitOptions<
@@ -89,7 +91,7 @@ export interface PeerEmitOptions<
 > {
   name: TName;
   input: EventInput<OperationAt<TContract, TName>>;
-  send?: TSendOptions;
+  sendOptions?: TSendOptions;
 }
 
 type PeerRequestHandleOptions<TContract extends Contract, TName extends RequestName<TContract>> = {
@@ -100,7 +102,7 @@ type PeerRequestHandleOptions<TContract extends Contract, TName extends RequestN
   ) =>
     | RequestHandlerOutput<OperationAt<TContract, TName>>
     | Promise<RequestHandlerOutput<OperationAt<TContract, TName>>>;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 };
 
 type PeerStreamHandleOptions<TContract extends Contract, TName extends StreamName<TContract>> = {
@@ -109,10 +111,13 @@ type PeerStreamHandleOptions<TContract extends Contract, TName extends StreamNam
     input: StreamHandlerInput<OperationAt<TContract, TName>>,
     context: PeerHandleContext,
   ) => AsyncIterable<StreamHandlerItem<OperationAt<TContract, TName>>>;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 };
 
-export type PeerHandleOptions<TContract extends Contract, TName extends HandleName<TContract>> =
+export type PeerHandleOptions<
+  TContract extends Contract,
+  TName extends HandledOperationName<TContract>,
+> =
   TName extends RequestName<TContract>
     ? PeerRequestHandleOptions<TContract, TName>
     : TName extends StreamName<TContract>
@@ -123,9 +128,9 @@ export interface PeerOnOptions<TContract extends Contract, TName extends EventNa
   name: TName;
   listener: (
     input: EventListenerInput<OperationAt<TContract, TName>>,
-    context: PeerNotificationContext,
+    context: PeerEventContext,
   ) => void;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export type PeerOnceOptions<
@@ -136,7 +141,7 @@ export type PeerOnceOptions<
 export interface CreatePeerOptions<TContract extends Contract, TSendOptions = void> {
   contract: TContract;
   channel: Channel<unknown, unknown, TSendOptions>;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 export interface Peer<TContract extends Contract, TSendOptions = void> {
@@ -152,17 +157,17 @@ export interface Peer<TContract extends Contract, TSendOptions = void> {
     options: PeerEmitOptions<TContract, TName, TSendOptions>,
   ): void;
 
-  handle<const TName extends HandleName<TContract>>(
+  handle<const TName extends HandledOperationName<TContract>>(
     options: PeerHandleOptions<TContract, TName>,
-  ): PeerDispose;
+  ): DisposePeerRegistration;
 
   on<const TName extends EventName<TContract>>(
     options: PeerOnOptions<TContract, TName>,
-  ): PeerDispose;
+  ): DisposePeerRegistration;
 
   once<const TName extends EventName<TContract>>(
     options: PeerOnceOptions<TContract, TName>,
-  ): PeerDispose;
+  ): DisposePeerRegistration;
 
   close(): void;
 }

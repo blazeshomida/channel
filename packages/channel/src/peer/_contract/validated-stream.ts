@@ -31,7 +31,7 @@ export function createValidatedStream<TResult>({
           schema,
           value: result.value,
           operation,
-          direction: "item",
+          boundary: "item",
         });
 
         return {

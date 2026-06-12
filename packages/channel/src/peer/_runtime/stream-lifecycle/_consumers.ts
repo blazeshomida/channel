@@ -6,14 +6,14 @@ import type {
   PeerStreamErrorMessage,
   PeerStreamItemMessage,
 } from "../../messages";
-import type { PeerErrorHandler, PeerErrorPayload, PeerStream } from "../../types";
+import type { PeerError, PeerErrorCallback, PeerStream } from "../../types";
 import type { PeerContext } from "../context";
 import type { ProtocolStreamOptions } from "../types";
 
 import { send } from "../../_actions/send";
 import { createCancelledIds } from "../_cancelled-ids";
 import { reportError } from "../context";
-import { createPeerClosedError, createPeerError, createRequestCancelledError } from "../errors";
+import { createOperationCancelledError, createPeerClosedError, createPeerError } from "../errors";
 
 interface PendingPull<TResult> {
   resolve(result: IteratorResult<TResult>): void;
@@ -22,10 +22,10 @@ interface PendingPull<TResult> {
 
 interface ConsumerStream {
   name: string;
-  onError: PeerErrorHandler | undefined;
+  onError: PeerErrorCallback | undefined;
   item(payload: unknown): void;
   end(): void;
-  fail(error: PeerErrorPayload): void;
+  fail(error: PeerError): void;
 }
 
 interface CreateStreamConsumersArgs<TSendOptions> {
@@ -40,7 +40,7 @@ export interface StreamConsumers<TSendOptions> {
   receiveItem(message: PeerStreamItemMessage): void;
   receiveEnd(message: PeerStreamEndMessage): void;
   receiveError(message: PeerStreamErrorMessage): void;
-  close(error: PeerErrorPayload): void;
+  close(error: PeerError): void;
 }
 
 function getAbortReason(signal: AbortSignal): unknown {
@@ -116,7 +116,7 @@ export function createStreamConsumers<TSendOptions>({
       let started = false;
       let requestSent = false;
       let closed = false;
-      let failure: PeerErrorPayload | undefined;
+      let failure: PeerError | undefined;
       let failureDelivered = false;
       let pendingPull: PendingPull<TResult> | undefined;
       let tail: Promise<void> | undefined;
@@ -129,7 +129,7 @@ export function createStreamConsumers<TSendOptions>({
         }
       };
 
-      const fail = (error: PeerErrorPayload) => {
+      const fail = (error: PeerError) => {
         if (closed) {
           return;
         }
@@ -179,7 +179,7 @@ export function createStreamConsumers<TSendOptions>({
       };
 
       const onAbort = () => {
-        const error = createRequestCancelledError(
+        const error = createOperationCancelledError(
           options.signal === undefined ? undefined : getAbortReason(options.signal),
         );
 

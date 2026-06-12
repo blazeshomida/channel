@@ -1,11 +1,11 @@
-import type { PeerErrorPayload, PeerValidationDirection, PeerValidationIssue } from "../types";
+import type { PeerError, PeerValidationBoundary, PeerValidationIssue } from "../types";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 interface ValidateArgs {
   schema: StandardSchemaV1 | undefined;
   value: unknown;
   operation: string;
-  direction: PeerValidationDirection;
+  boundary: PeerValidationBoundary;
 }
 
 function serializeIssue(issue: StandardSchemaV1.Issue): PeerValidationIssue {
@@ -29,7 +29,7 @@ export async function validate({
   schema,
   value,
   operation,
-  direction,
+  boundary,
 }: ValidateArgs): Promise<unknown> {
   if (schema === undefined) {
     return value;
@@ -43,11 +43,11 @@ export async function validate({
 
   throw {
     code: "VALIDATION_FAILED",
-    message: `Validation failed for "${operation}" ${direction}.`,
+    message: `Validation failed for "${operation}" ${boundary}.`,
     data: {
       operation,
-      direction,
+      boundary,
       issues: result.issues.map(serializeIssue),
     },
-  } satisfies PeerErrorPayload;
+  } satisfies PeerError;
 }

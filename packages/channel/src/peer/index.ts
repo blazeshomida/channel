@@ -13,7 +13,7 @@ export type {
 export type {
   CreatePeerOptions,
   EventName,
-  HandleName,
+  HandledOperationName,
   Peer,
   PeerEmitOptions,
   PeerHandleOptions,
@@ -25,15 +25,15 @@ export type {
   StreamName,
 } from "./contract-types";
 export type {
-  PeerDispose,
+  DisposePeerRegistration,
+  PeerError,
+  PeerErrorCallback,
   PeerErrorCode,
   PeerErrorContext,
-  PeerErrorHandler,
-  PeerErrorPayload,
+  PeerEventContext,
   PeerHandleContext,
-  PeerNotificationContext,
   PeerStream,
-  PeerValidationDirection,
-  PeerValidationErrorData,
+  PeerValidationBoundary,
+  PeerValidationFailureData,
   PeerValidationIssue,
 } from "./types";

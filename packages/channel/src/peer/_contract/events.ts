@@ -1,12 +1,12 @@
 import type { Contract } from "../contract";
-import type { PeerDispose, PeerErrorHandler, PeerNotificationContext } from "../types";
+import type { DisposePeerRegistration, PeerErrorCallback, PeerEventContext } from "../types";
 
-import { invokeErrorHandler } from "../_runtime/error-handler";
+import { invokeErrorCallback } from "../_runtime/error-callback";
 import { validate } from "../_runtime/validation";
 
 interface ContractEventListener {
-  listener: (input: unknown, context: PeerNotificationContext) => void;
-  onError: PeerErrorHandler | undefined;
+  listener: (input: unknown, context: PeerEventContext) => void;
+  onError: PeerErrorCallback | undefined;
   once: boolean;
 }
 
@@ -17,19 +17,19 @@ interface ContractEventState {
 
 interface CreateContractEventsArgs {
   contract: Contract;
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
 }
 
 interface AddContractEventListenerArgs {
   name: string;
   listener: ContractEventListener["listener"];
-  onError?: PeerErrorHandler;
+  onError?: PeerErrorCallback;
   once: boolean;
 }
 
 export interface ContractEvents {
-  add(options: AddContractEventListenerArgs): PeerDispose;
-  receive(input: unknown, context: PeerNotificationContext): void;
+  add(options: AddContractEventListenerArgs): DisposePeerRegistration;
+  receive(input: unknown, context: PeerEventContext): void;
   close(): void;
 }
 
@@ -54,14 +54,14 @@ export function createContractEvents({
     }
   }
 
-  function reportError(error: unknown, name: string, localOnError?: PeerErrorHandler): void {
+  function reportError(error: unknown, name: string, localOnError?: PeerErrorCallback): void {
     const context = {
-      type: "notification",
+      type: "event",
       name,
-    } satisfies PeerNotificationContext & { type: "notification" };
+    } satisfies PeerEventContext & { type: "event" };
 
-    invokeErrorHandler(localOnError, error, context);
-    invokeErrorHandler(onError, error, context);
+    invokeErrorCallback(localOnError, error, context);
+    invokeErrorCallback(onError, error, context);
   }
 
   function deliver(
@@ -114,7 +114,7 @@ export function createContractEvents({
           schema: operation.input,
           value: input,
           operation: name,
-          direction: "input",
+          boundary: "input",
         });
 
         if (events.get(name) === state) {
@@ -130,14 +130,14 @@ export function createContractEvents({
             continue;
           }
 
-          invokeErrorHandler(listener.onError, error, {
-            type: "notification",
+          invokeErrorCallback(listener.onError, error, {
+            type: "event",
             name,
           });
         }
 
-        invokeErrorHandler(onError, error, {
-          type: "notification",
+        invokeErrorCallback(onError, error, {
+          type: "event",
           name,
         });
       }

@@ -1,18 +1,18 @@
 /// <reference lib="dom" />
 
 import type { PeerCancelMessage, PeerResponseMessage } from "../../messages";
-import type { PeerErrorHandler, PeerErrorPayload } from "../../types";
+import type { PeerError, PeerErrorCallback } from "../../types";
 import type { PeerContext } from "../context";
 import type { ProtocolRequestOptions } from "../types";
 
 import { send } from "../../_actions/send";
 import { createCancelledIds } from "../_cancelled-ids";
 import { reportError } from "../context";
-import { createPeerClosedError, createPeerError, createRequestCancelledError } from "../errors";
+import { createOperationCancelledError, createPeerClosedError, createPeerError } from "../errors";
 
 interface PendingRequest {
   name: string;
-  onError: PeerErrorHandler | undefined;
+  onError: PeerErrorCallback | undefined;
   cleanup(): void;
   resolve(value: unknown): void;
   reject(reason: unknown): void;
@@ -28,7 +28,7 @@ export interface RequestClient<TSendOptions> {
   ): Promise<TResult>;
   getNextId: () => number;
   receiveResponse(message: PeerResponseMessage): void;
-  close(error: PeerErrorPayload): void;
+  close(error: PeerError): void;
 }
 
 function getAbortReason(signal: AbortSignal): unknown {
@@ -73,7 +73,7 @@ export function createRequestClient<TSendOptions>({
       }
 
       if (options.signal?.aborted) {
-        return Promise.reject(createRequestCancelledError(getAbortReason(options.signal)));
+        return Promise.reject(createOperationCancelledError(getAbortReason(options.signal)));
       }
 
       const id = getNextId();
@@ -84,7 +84,7 @@ export function createRequestClient<TSendOptions>({
         };
 
         const onAbort = () => {
-          const error = createRequestCancelledError(
+          const error = createOperationCancelledError(
             options.signal === undefined ? undefined : getAbortReason(options.signal),
           );
 
