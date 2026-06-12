@@ -3,8 +3,6 @@ import type {
   ProtocolHandleOptions,
   ProtocolHandleStreamOptions,
   ProtocolNotifyOptions,
-  ProtocolOnOptions,
-  ProtocolOnceOptions,
   ProtocolRequestOptions,
   ProtocolRuntime,
   ProtocolStreamOptions,
@@ -13,7 +11,6 @@ import type {
 import { close } from "../_actions/close";
 import { handle, hasHandler } from "../_actions/handle";
 import { handleStream, hasStreamHandler } from "../_actions/handle-stream";
-import { listen, listenOnce } from "../_actions/listen";
 import { notify } from "../_actions/notify";
 import { receive } from "../_actions/receive";
 import { request } from "../_actions/request";
@@ -82,20 +79,6 @@ export function createProtocolRuntime<TSendOptions = void>(
       notify<TPayload, TSendOptions>({
         context,
         options: notifyOptions,
-      });
-    },
-
-    on<TPayload = unknown>(onOptions: ProtocolOnOptions<TPayload>) {
-      return listen<TPayload, TSendOptions>({
-        context,
-        options: onOptions,
-      });
-    },
-
-    once<TPayload = unknown>(onceOptions: ProtocolOnceOptions<TPayload>) {
-      return listenOnce<TPayload, TSendOptions>({
-        context,
-        options: onceOptions,
       });
     },
 

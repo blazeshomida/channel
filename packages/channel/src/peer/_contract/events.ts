@@ -1,4 +1,3 @@
-import type { ProtocolRuntime } from "../_runtime/types";
 import type { Contract } from "../contract";
 import type { PeerDispose, PeerErrorHandler, PeerNotificationContext } from "../types";
 
@@ -12,13 +11,11 @@ interface ContractEventListener {
 
 interface ContractEventState {
   listeners: Set<ContractEventListener>;
-  unsubscribe: PeerDispose;
   validationTail: Promise<void> | undefined;
 }
 
-interface CreateContractEventsArgs<TSendOptions> {
+interface CreateContractEventsArgs {
   contract: Contract;
-  runtime: ProtocolRuntime<TSendOptions>;
   onError?: PeerErrorHandler;
 }
 
@@ -31,15 +28,16 @@ interface AddContractEventListenerArgs {
 
 export interface ContractEvents {
   add(options: AddContractEventListenerArgs): PeerDispose;
+  receive(input: unknown, context: PeerNotificationContext): void;
   close(): void;
 }
 
-export function createContractEvents<TSendOptions>({
+export function createContractEvents({
   contract,
-  runtime,
   onError,
-}: CreateContractEventsArgs<TSendOptions>): ContractEvents {
+}: CreateContractEventsArgs): ContractEvents {
   const events = new Map<string, ContractEventState>();
+  let closed = false;
 
   function deleteListener(name: string, listener: ContractEventListener): void {
     const state = events.get(name);
@@ -51,7 +49,6 @@ export function createContractEvents<TSendOptions>({
     state.listeners.delete(listener);
 
     if (state.listeners.size === 0) {
-      state.unsubscribe();
       events.delete(name);
     }
   }
@@ -66,16 +63,23 @@ export function createContractEvents<TSendOptions>({
     onError?.(error, context);
   }
 
-  function deliver(name: string, input: unknown): void {
-    const state = events.get(name);
-
-    if (!state) {
+  function deliver(
+    name: string,
+    state: ContractEventState,
+    listeners: ContractEventListener[],
+    input: unknown,
+  ): void {
+    if (events.get(name) !== state) {
       return;
     }
 
     const context = { name };
 
-    for (const listener of state.listeners) {
+    for (const listener of listeners) {
+      if (!state.listeners.has(listener)) {
+        continue;
+      }
+
       if (listener.once) {
         deleteListener(name, listener);
       }
@@ -90,15 +94,16 @@ export function createContractEvents<TSendOptions>({
 
   function receive(name: string, input: unknown): void {
     const operation = contract.operations[name];
-
-    if (operation?.kind !== "event" || operation.input === undefined) {
-      deliver(name, input);
-      return;
-    }
-
     const state = events.get(name);
 
     if (!state) {
+      return;
+    }
+
+    const listeners = Array.from(state.listeners);
+
+    if (operation?.kind !== "event" || operation.input === undefined) {
+      deliver(name, state, listeners, input);
       return;
     }
 
@@ -112,14 +117,18 @@ export function createContractEvents<TSendOptions>({
         });
 
         if (events.get(name) === state) {
-          deliver(name, validatedInput);
+          deliver(name, state, listeners, validatedInput);
         }
       } catch (error) {
         if (events.get(name) !== state) {
           return;
         }
 
-        for (const listener of state.listeners) {
+        for (const listener of listeners) {
+          if (!state.listeners.has(listener)) {
+            continue;
+          }
+
           listener.onError?.(error, {
             type: "notification",
             name,
@@ -147,17 +156,15 @@ export function createContractEvents<TSendOptions>({
 
   return {
     add({ name, listener, onError: listenerOnError, once }) {
+      if (closed) {
+        throw new Error("Peer is closed.");
+      }
+
       let state = events.get(name);
 
       if (!state) {
         state = {
           listeners: new Set(),
-          unsubscribe: runtime.on({
-            name,
-            listener(input) {
-              receive(name, input);
-            },
-          }),
           validationTail: undefined,
         };
         events.set(name, state);
@@ -183,11 +190,12 @@ export function createContractEvents<TSendOptions>({
       };
     },
 
-    close() {
-      for (const state of events.values()) {
-        state.unsubscribe();
-      }
+    receive(input, context) {
+      receive(context.name, input);
+    },
 
+    close() {
+      closed = true;
       events.clear();
     },
   };

@@ -177,25 +177,9 @@ function handleNotification<TSendOptions>({
   context,
   message,
 }: HandleNotificationArgs<TSendOptions>): void {
-  context.notifications.emit(
-    message.name,
-    message.payload,
-    (listener, payload, notificationContext) => {
-      try {
-        listener.listener(payload, notificationContext);
-      } catch (error) {
-        reportError({
-          context,
-          error,
-          errorContext: {
-            type: "notification",
-            name: message.name,
-          },
-          onError: listener.onError,
-        });
-      }
-    },
-  );
+  context.onNotification?.(message.payload, {
+    name: message.name,
+  });
 }
 
 function handleCancel<TSendOptions>({
