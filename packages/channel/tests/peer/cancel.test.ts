@@ -120,7 +120,7 @@ test("late responses after local cancellation are ignored", async () => {
   expect(errors).toEqual([]);
 });
 
-test("cancelled request tracking is bounded", async () => {
+test("late responses remain ignored after cancelled request tracking is bounded", async () => {
   const errors: string[] = [];
   const { peer, transport } = createTestPeerWithOptions({
     onError(error, context) {
@@ -162,7 +162,14 @@ test("cancelled request tracking is bounded", async () => {
     payload: "done",
   });
 
-  expect(errors).toEqual(['response:No pending request for response "1".']);
+  transport.emit({
+    type: "response",
+    id: 1_026,
+    ok: true,
+    payload: "done",
+  });
+
+  expect(errors).toEqual(['response:No pending request for response "1026".']);
 });
 
 test("unknown response ids still report errors", () => {

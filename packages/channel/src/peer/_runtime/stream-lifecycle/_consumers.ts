@@ -11,10 +11,9 @@ import type { PeerContext } from "../context";
 import type { ProtocolStreamOptions } from "../types";
 
 import { send } from "../../_actions/send";
+import { createCancelledIds } from "../_cancelled-ids";
 import { reportError } from "../context";
 import { createPeerClosedError, createPeerError, createRequestCancelledError } from "../errors";
-
-const maxCancelledConsumers = 1024;
 
 interface PendingPull<TResult> {
   resolve(result: IteratorResult<TResult>): void;
@@ -77,25 +76,7 @@ export function createStreamConsumers<TSendOptions>({
   getNextId,
 }: CreateStreamConsumersArgs<TSendOptions>): StreamConsumers<TSendOptions> {
   const consumers = new Map<number, ConsumerStream>();
-  const cancelledConsumers = new Set<number>();
-  const cancelledConsumerOrder: number[] = [];
-
-  const rememberCancelledConsumer = (id: number): void => {
-    if (cancelledConsumers.has(id)) {
-      return;
-    }
-
-    cancelledConsumers.add(id);
-    cancelledConsumerOrder.push(id);
-
-    while (cancelledConsumerOrder.length > maxCancelledConsumers) {
-      const expiredId = cancelledConsumerOrder.shift();
-
-      if (expiredId !== undefined) {
-        cancelledConsumers.delete(expiredId);
-      }
-    }
-  };
+  const cancelledConsumers = createCancelledIds();
 
   const reportUnknownStreamMessage = (id: number): void => {
     reportError({
@@ -213,7 +194,7 @@ export function createStreamConsumers<TSendOptions>({
           return;
         }
 
-        rememberCancelledConsumer(streamId);
+        cancelledConsumers.remember(streamId);
         fail(error);
 
         send({
@@ -348,7 +329,7 @@ export function createStreamConsumers<TSendOptions>({
 
         return() {
           if (!closed && started && id !== undefined) {
-            rememberCancelledConsumer(id);
+            cancelledConsumers.remember(id);
             send({
               context,
               message: createCancelMessage(id, undefined),
@@ -411,7 +392,6 @@ export function createStreamConsumers<TSendOptions>({
 
       consumers.clear();
       cancelledConsumers.clear();
-      cancelledConsumerOrder.length = 0;
 
       for (const consumer of pendingConsumers) {
         consumer.fail(error);
