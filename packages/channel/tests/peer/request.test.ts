@@ -85,6 +85,54 @@ test("resolves successful responses", async () => {
   await expect(promise).resolves.toBe(3);
 });
 
+test("failed request sends roll back pending state", async () => {
+  const errors: string[] = [];
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(error, context) {
+      errors.push(`${context.type}:${getErrorMessage(error)}`);
+    },
+  });
+  const controller = new AbortController();
+  const sendError = new Error("Send failed.");
+
+  transport.sendError = sendError;
+
+  const failedRequest = peer.request({
+    name: "task.fail",
+    payload: null,
+    signal: controller.signal,
+  });
+
+  await expect(failedRequest).rejects.toBe(sendError);
+
+  controller.abort("too late");
+
+  expect(transport.sent).toEqual([]);
+
+  transport.emit({
+    type: "response",
+    id: 1,
+    ok: true,
+    payload: "unused",
+  });
+
+  expect(errors).toEqual(['response:No pending request for response "1".']);
+
+  const nextRequest = peer.request<null, string>({
+    name: "task.next",
+    payload: null,
+  });
+
+  transport.emit({
+    type: "response",
+    id: 2,
+    ok: true,
+    payload: "done",
+  });
+
+  await expect(nextRequest).resolves.toBe("done");
+});
+
 test("rejects error responses", async () => {
   const { peer, transport } = createTestPeer();
 

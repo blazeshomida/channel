@@ -138,16 +138,22 @@ export function createRequestClient<TSendOptions>({
           once: true,
         });
 
-        send({
-          context,
-          message: {
-            type: "request",
-            id,
-            name: options.name,
-            payload: options.payload,
-          },
-          options: options.send,
-        });
+        try {
+          send({
+            context,
+            message: {
+              type: "request",
+              id,
+              name: options.name,
+              payload: options.payload,
+            },
+            options: options.send,
+          });
+        } catch (error) {
+          cleanup();
+          pendingRequests.delete(id);
+          reject(error);
+        }
       });
     },
 

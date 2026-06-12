@@ -133,6 +133,7 @@ export function createStreamConsumers<TSendOptions>({
     ): PeerStream<TResult> {
       let id: number | undefined;
       let started = false;
+      let requestSent = false;
       let closed = false;
       let failure: PeerErrorPayload | undefined;
       let failureDelivered = false;
@@ -172,6 +173,28 @@ export function createStreamConsumers<TSendOptions>({
         cleanup();
         pendingPull?.resolve(done());
         pendingPull = undefined;
+      };
+
+      const rollbackFailedSend = (error: unknown) => {
+        closed = true;
+        cleanup();
+        pendingPull?.reject(error);
+        pendingPull = undefined;
+      };
+
+      const cancelRemoteAfterFailedPull = () => {
+        if (!requestSent || id === undefined) {
+          return;
+        }
+
+        try {
+          send({
+            context,
+            message: createCancelMessage(id, undefined),
+          });
+        } catch {
+          // Preserve the original pull send failure when remote cleanup also fails.
+        }
       };
 
       const onAbort = () => {
@@ -268,29 +291,39 @@ export function createStreamConsumers<TSendOptions>({
           };
 
           if (firstPull) {
-            send({
-              context,
-              message: {
-                type: "stream-request",
-                id: getStreamId(),
-                name: options.name,
-                payload: options.payload,
-              },
-              options: options.send,
-            });
+            try {
+              send({
+                context,
+                message: {
+                  type: "stream-request",
+                  id: getStreamId(),
+                  name: options.name,
+                  payload: options.payload,
+                },
+                options: options.send,
+              });
+              requestSent = true;
+            } catch (error) {
+              rollbackFailedSend(error);
+            }
           }
 
           if (closed) {
             return;
           }
 
-          send({
-            context,
-            message: {
-              type: "stream-pull",
-              id: getStreamId(),
-            },
-          });
+          try {
+            send({
+              context,
+              message: {
+                type: "stream-pull",
+                id: getStreamId(),
+              },
+            });
+          } catch (error) {
+            rollbackFailedSend(error);
+            cancelRemoteAfterFailedPull();
+          }
         });
       };
 
