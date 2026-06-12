@@ -6,10 +6,9 @@ import type { PeerContext } from "../context";
 import type { ProtocolRequestOptions } from "../types";
 
 import { send } from "../../_actions/send";
+import { createCancelledIds } from "../_cancelled-ids";
 import { reportError } from "../context";
 import { createPeerClosedError, createPeerError, createRequestCancelledError } from "../errors";
-
-const maxCancelledRequests = 1024;
 
 interface PendingRequest {
   name: string;
@@ -58,29 +57,11 @@ export function createRequestClient<TSendOptions>({
 }: CreateRequestClientArgs<TSendOptions>): RequestClient<TSendOptions> {
   let previousId = 0;
   const pendingRequests = new Map<number, PendingRequest>();
-  const cancelledRequests = new Set<number>();
-  const cancelledRequestOrder: number[] = [];
+  const cancelledRequests = createCancelledIds();
 
   const getNextId = (): number => {
     previousId += 1;
     return previousId;
-  };
-
-  const rememberCancelledRequest = (id: number): void => {
-    if (cancelledRequests.has(id)) {
-      return;
-    }
-
-    cancelledRequests.add(id);
-    cancelledRequestOrder.push(id);
-
-    while (cancelledRequestOrder.length > maxCancelledRequests) {
-      const expiredId = cancelledRequestOrder.shift();
-
-      if (expiredId !== undefined) {
-        cancelledRequests.delete(expiredId);
-      }
-    }
   };
 
   return {
@@ -109,7 +90,7 @@ export function createRequestClient<TSendOptions>({
 
           cleanup();
           pendingRequests.delete(id);
-          rememberCancelledRequest(id);
+          cancelledRequests.remember(id);
           reject(error);
 
           send({
@@ -208,7 +189,6 @@ export function createRequestClient<TSendOptions>({
 
       pendingRequests.clear();
       cancelledRequests.clear();
-      cancelledRequestOrder.length = 0;
 
       for (const request of pending) {
         request.cleanup();

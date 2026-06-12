@@ -280,7 +280,7 @@ test("stream signal abort rejects pending pulls and ignores late items", async (
   expect(errors).toEqual([]);
 });
 
-test("cancelled stream tracking is bounded", async () => {
+test("late messages remain ignored after cancelled stream tracking is bounded", async () => {
   const errors: string[] = [];
   const { peer, transport } = createTestPeerWithOptions({
     onError(error, context) {
@@ -289,7 +289,7 @@ test("cancelled stream tracking is bounded", async () => {
   });
   const cancellations: Array<Promise<void>> = [];
 
-  for (let index = 0; index < 1_025; index += 1) {
+  for (let index = 0; index < 1_027; index += 1) {
     const stream = peer.stream({
       name: "numbers",
       payload: index,
@@ -314,12 +314,80 @@ test("cancelled stream tracking is bounded", async () => {
   });
 
   transport.emit({
+    type: "stream-end",
+    id: 2,
+  });
+
+  transport.emit({
+    type: "stream-error",
+    id: 3,
+    error: {
+      code: "STREAM_FAILED",
+      message: "Too late.",
+    },
+  });
+
+  transport.emit({
     type: "stream-item",
-    id: 1_025,
+    id: 1_028,
     payload: 1,
   });
 
-  expect(errors).toEqual(['stream-message:No pending stream for message "1".']);
+  expect(errors).toEqual(['stream-message:No pending stream for message "1028".']);
+});
+
+test("request and stream ids share one sequence", async () => {
+  const { peer, transport } = createTestPeer();
+  const controller = new AbortController();
+  const request = peer.request({
+    name: "task.run",
+    payload: null,
+    signal: controller.signal,
+  });
+  const stream = peer.stream({
+    name: "numbers",
+    payload: null,
+  });
+  const next = stream.next();
+
+  controller.abort("not needed");
+  void stream.return();
+
+  await expect(request).rejects.toMatchObject({
+    code: "REQUEST_CANCELLED",
+  });
+  await expect(next).resolves.toEqual({
+    done: true,
+    value: undefined,
+  });
+
+  expect(transport.sent).toEqual([
+    {
+      type: "request",
+      id: 1,
+      name: "task.run",
+      payload: null,
+    },
+    {
+      type: "stream-request",
+      id: 2,
+      name: "numbers",
+      payload: null,
+    },
+    {
+      type: "stream-pull",
+      id: 2,
+    },
+    {
+      type: "cancel",
+      id: 1,
+      reason: "not needed",
+    },
+    {
+      type: "cancel",
+      id: 2,
+    },
+  ]);
 });
 
 test("cancel messages abort stream handlers and close their iterators", async () => {
