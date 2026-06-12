@@ -8,6 +8,9 @@ Use this file for repository-specific instructions. Use the handbook as the cano
 
 This repository is the workspace for `@blazeshomida/channel`, a typed message channel package for workers and other transports. The package is currently private while the API is being explored.
 
+Use `LANGUAGE.md` as the canonical vocabulary for public APIs, JSDoc, guides, examples, tests, and
+issues.
+
 ## Handbook References
 
 Primary handbook:
