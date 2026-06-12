@@ -61,7 +61,7 @@ export interface ProtocolHandleStreamOptions<TPayload, TResult> {
 }
 
 export interface CreateProtocolRuntimeOptions<TSendOptions = void> {
-  channel: Channel<PeerMessage, PeerMessage, TSendOptions>;
+  channel: Channel<unknown, PeerMessage, TSendOptions>;
   onNotification?: ProtocolNotificationListener<unknown>;
   onError?: PeerErrorHandler;
 }
