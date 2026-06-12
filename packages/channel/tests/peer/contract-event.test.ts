@@ -392,3 +392,46 @@ test("listener errors report through local and root error handlers", () => {
     "root:notification:Error: Listener failed.",
   ]);
 });
+
+test("throwing event onError callbacks do not escape delivery", () => {
+  const contract = createContract({
+    operations: {
+      log: event<{ message: string }>(),
+    },
+  });
+  const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
+  const sender = createPeer({
+    contract,
+    channel: createChannel(senderTransport),
+  });
+  const errors: string[] = [];
+  const receiver = createPeer({
+    contract,
+    channel: createChannel(listenerTransport),
+    onError(_error, context) {
+      errors.push(`root:${context.type}`);
+      throw new Error("Root error handler failed.");
+    },
+  });
+
+  receiver.on({
+    name: "log",
+    listener() {
+      throw new Error("Listener failed.");
+    },
+    onError(_error, context) {
+      errors.push(`local:${context.type}`);
+      throw new Error("Local error handler failed.");
+    },
+  });
+
+  expect(() => {
+    sender.emit({
+      name: "log",
+      input: {
+        message: "hello",
+      },
+    });
+  }).not.toThrow();
+  expect(errors).toEqual(["local:notification", "root:notification"]);
+});

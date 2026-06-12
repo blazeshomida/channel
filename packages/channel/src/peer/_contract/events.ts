@@ -1,6 +1,7 @@
 import type { Contract } from "../contract";
 import type { PeerDispose, PeerErrorHandler, PeerNotificationContext } from "../types";
 
+import { invokeErrorHandler } from "../_runtime/error-handler";
 import { validate } from "../_runtime/validation";
 
 interface ContractEventListener {
@@ -59,8 +60,8 @@ export function createContractEvents({
       name,
     } satisfies PeerNotificationContext & { type: "notification" };
 
-    localOnError?.(error, context);
-    onError?.(error, context);
+    invokeErrorHandler(localOnError, error, context);
+    invokeErrorHandler(onError, error, context);
   }
 
   function deliver(
@@ -129,13 +130,13 @@ export function createContractEvents({
             continue;
           }
 
-          listener.onError?.(error, {
+          invokeErrorHandler(listener.onError, error, {
             type: "notification",
             name,
           });
         }
 
-        onError?.(error, {
+        invokeErrorHandler(onError, error, {
           type: "notification",
           name,
         });

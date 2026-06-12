@@ -180,3 +180,40 @@ test("calls request onError before root onError for error responses", async () =
 
   expect(errors).toEqual(["local:request:Remote failed.", "root:request:Remote failed."]);
 });
+
+test("throwing request onError callbacks do not prevent rejection", async () => {
+  const errors: string[] = [];
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(_error, context) {
+      errors.push(`root:${context.type}`);
+      throw new Error("Root error handler failed.");
+    },
+  });
+
+  const promise = peer.request<null, string>({
+    name: "task.fail",
+    payload: null,
+    onError(_error, context) {
+      errors.push(`local:${context.type}`);
+      throw new Error("Local error handler failed.");
+    },
+  });
+
+  expect(() => {
+    transport.emit({
+      type: "response",
+      id: 1,
+      ok: false,
+      error: {
+        code: "REQUEST_FAILED",
+        message: "Remote failed.",
+      },
+    });
+  }).not.toThrow();
+
+  await expect(promise).rejects.toMatchObject({
+    code: "REQUEST_FAILED",
+    message: "Remote failed.",
+  });
+  expect(errors).toEqual(["local:request", "root:request"]);
+});
