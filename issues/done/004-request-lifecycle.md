@@ -14,13 +14,13 @@ cancellation, late cancelled responses, and cleanup while preserving the existin
 
 ## Acceptance criteria
 
-- [ ] Request identifiers and pending response settlement have one lifecycle owner.
-- [ ] Active request cancellation and cleanup have one lifecycle owner.
-- [ ] Late responses for locally cancelled requests remain ignored.
-- [ ] Abort reasons and serializable request errors retain their current behavior.
-- [ ] Closing rejects pending requests and aborts active handlers.
-- [ ] Pass-through request registries are absorbed where they no longer provide depth.
-- [ ] Public and focused protocol request tests pass.
+- [x] Request identifiers and pending response settlement have one lifecycle owner.
+- [x] Active request cancellation and cleanup have one lifecycle owner.
+- [x] Late responses for locally cancelled requests remain ignored.
+- [x] Abort reasons and serializable request errors retain their current behavior.
+- [x] Closing rejects pending requests and aborts active handlers.
+- [x] Pass-through request registries are absorbed where they no longer provide depth.
+- [x] Public and focused protocol request tests pass.
 
 ## Blocked by
 
