@@ -3,6 +3,8 @@ import type { PeerMessage } from "../messages";
 import type { PeerErrorContext, PeerErrorHandler } from "../types";
 import type { CreateProtocolRuntimeOptions, ProtocolNotificationListener } from "./types";
 
+import { invokeErrorHandler } from "./error-handler";
+
 interface CreateContextArgs<TSendOptions> {
   options: CreateProtocolRuntimeOptions<TSendOptions>;
 }
@@ -46,8 +48,8 @@ export function reportError<TSendOptions>({
   errorContext,
   onError,
 }: ReportErrorArgs<TSendOptions>): void {
-  onError?.(error, errorContext);
-  context.onError?.(error, errorContext);
+  invokeErrorHandler(onError, error, errorContext);
+  invokeErrorHandler(context.onError, error, errorContext);
 }
 
 interface AssertOpenArgs<TSendOptions> {

@@ -285,3 +285,46 @@ test("calls handler onError before root onError for handler failures", async () 
     },
   ]);
 });
+
+test("throwing handler onError callbacks do not prevent error responses", async () => {
+  const errors: string[] = [];
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(_error, context) {
+      errors.push(`root:${context.type}`);
+      throw new Error("Root error handler failed.");
+    },
+  });
+
+  peer.handle({
+    name: "task.fail",
+    handler() {
+      throw new Error("Handler failed.");
+    },
+    onError(_error, context) {
+      errors.push(`local:${context.type}`);
+      throw new Error("Local error handler failed.");
+    },
+  });
+
+  transport.emit({
+    type: "request",
+    id: 1,
+    name: "task.fail",
+    payload: null,
+  });
+
+  await Promise.resolve();
+
+  expect(errors).toEqual(["local:handler", "root:handler"]);
+  expect(transport.sent).toEqual([
+    {
+      type: "response",
+      id: 1,
+      ok: false,
+      error: {
+        code: "REQUEST_FAILED",
+        message: "Handler failed.",
+      },
+    },
+  ]);
+});

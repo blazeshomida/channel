@@ -12,12 +12,12 @@ handler, stream, or event lifecycle continues normally.
 
 ## Acceptance criteria
 
-- [ ] Throwing request error callbacks do not prevent the request promise from rejecting.
-- [ ] Throwing request and stream handler error callbacks do not prevent error responses from being sent.
-- [ ] Throwing event error callbacks do not escape notification delivery.
-- [ ] Local callbacks still run before root callbacks.
-- [ ] Callback failures are not recursively reported.
-- [ ] Focused Peer tests pass.
+- [x] Throwing request error callbacks do not prevent the request promise from rejecting.
+- [x] Throwing request and stream handler error callbacks do not prevent error responses from being sent.
+- [x] Throwing event error callbacks do not escape notification delivery.
+- [x] Local callbacks still run before root callbacks.
+- [x] Callback failures are not recursively reported.
+- [x] Focused Peer tests pass.
 
 ## Blocked by
 

@@ -135,6 +135,60 @@ test("stream handler failures report and send stream errors", async () => {
   ]);
 });
 
+test("throwing stream onError callbacks do not prevent stream errors", async () => {
+  const errors: string[] = [];
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(_error, context) {
+      errors.push(`root:${context.type}`);
+      throw new Error("Root error handler failed.");
+    },
+  });
+
+  peer.handleStream({
+    name: "broken",
+    handler() {
+      return {
+        [Symbol.asyncIterator]() {
+          return {
+            next() {
+              return Promise.reject(new Error("Stream failed."));
+            },
+          };
+        },
+      };
+    },
+    onError(_error, context) {
+      errors.push(`local:${context.type}`);
+      throw new Error("Local error handler failed.");
+    },
+  });
+
+  transport.emit({
+    type: "stream-request",
+    id: 1,
+    name: "broken",
+    payload: null,
+  });
+  transport.emit({
+    type: "stream-pull",
+    id: 1,
+  });
+
+  await flushAsyncWork();
+
+  expect(errors).toEqual(["local:stream-handler", "root:stream-handler"]);
+  expect(transport.sent).toEqual([
+    {
+      type: "stream-error",
+      id: 1,
+      error: {
+        code: "STREAM_FAILED",
+        message: "Stream failed.",
+      },
+    },
+  ]);
+});
+
 test("rejects duplicate stream handlers", () => {
   const { peer } = createTestPeer();
 
