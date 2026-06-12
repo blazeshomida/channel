@@ -1,11 +1,14 @@
 import type { PeerContext } from "../_runtime/context";
 import type { RequestLifecycle } from "../_runtime/request-lifecycle";
 import type { StreamLifecycle } from "../_runtime/stream-lifecycle";
-import type { PeerCancelMessage, PeerMessage, PeerNotificationMessage } from "../messages";
+import type { PeerCancelMessage, PeerNotificationMessage } from "../messages";
 
+import { reportError } from "../_runtime/context";
+import { createPeerError } from "../_runtime/errors";
 import {
   isCancelMessage,
   isNotificationMessage,
+  isPeerMessage,
   isRequestMessage,
   isResponseMessage,
   isStreamEndMessage,
@@ -17,7 +20,7 @@ import {
 
 interface ReceiveArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;
-  message: PeerMessage;
+  message: unknown;
   requests: RequestLifecycle<TSendOptions>;
   streams: StreamLifecycle<TSendOptions>;
 }
@@ -57,6 +60,18 @@ export function receive<TSendOptions>({
   requests,
   streams,
 }: ReceiveArgs<TSendOptions>): void {
+  if (!isPeerMessage(message)) {
+    reportError({
+      context,
+      error: createPeerError("INVALID_MESSAGE", "Invalid peer message."),
+      errorContext: {
+        type: "message",
+        message,
+      },
+    });
+    return;
+  }
+
   if (isResponseMessage(message)) {
     requests.receiveResponse(message);
     return;

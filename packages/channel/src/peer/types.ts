@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 
 export type PeerErrorCode =
+  | "INVALID_MESSAGE"
   | "METHOD_NOT_FOUND"
   | "REQUEST_FAILED"
   | "REQUEST_CANCELLED"
@@ -15,6 +16,7 @@ export interface PeerErrorPayload {
 }
 
 export type PeerErrorContext =
+  | { type: "message"; message: unknown }
   | { type: "request"; id: number; name: string }
   | { type: "handler"; id: number; name: string }
   | { type: "notification"; name: string }

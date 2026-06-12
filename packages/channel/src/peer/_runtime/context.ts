@@ -10,7 +10,7 @@ interface CreateContextArgs<TSendOptions> {
 }
 
 export interface PeerContext<TSendOptions = void> {
-  channel: Channel<PeerMessage, PeerMessage, TSendOptions>;
+  channel: Channel<unknown, PeerMessage, TSendOptions>;
   onNotification?: ProtocolNotificationListener<unknown>;
   closed: boolean;
   onError?: PeerErrorHandler;

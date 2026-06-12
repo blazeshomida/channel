@@ -1,4 +1,3 @@
-import type { Channel } from "../channel";
 import type { CreateProtocolRuntimeOptions } from "./_runtime/types";
 import type { Contract } from "./contract";
 import type {
@@ -15,7 +14,6 @@ import type {
   RequestName,
   StreamName,
 } from "./contract-types";
-import type { PeerMessage } from "./messages";
 
 import { createContractEvents } from "./_contract/events";
 import { createContractOperations } from "./_contract/operations";
@@ -33,10 +31,20 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
     ...(onError === undefined ? {} : { onError }),
   });
   const runtimeOptions = {
-    // The protocol is private; the contract peer owns this transport seam.
-    // Type boundary: createPeer adapts the public unknown channel to the private peer protocol.
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    channel: channel as Channel<PeerMessage, PeerMessage, TSendOptions>,
+    channel: {
+      get closed() {
+        return channel.closed;
+      },
+      send(message, ...args) {
+        channel.send(message, ...args);
+      },
+      subscribe(listener) {
+        return channel.subscribe(listener);
+      },
+      close() {
+        channel.close();
+      },
+    },
     onNotification(input, context) {
       events.receive(input, context);
     },
