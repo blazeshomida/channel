@@ -9,8 +9,21 @@ export class TestPeerTransport {
 
   closeCalls = 0;
   closed = false;
+  sendError: unknown;
+  sendErrorType: PeerMessage["type"] | undefined;
 
   send(message: PeerMessage): void {
+    if (
+      this.sendError !== undefined &&
+      (this.sendErrorType === undefined || this.sendErrorType === message.type)
+    ) {
+      const error = this.sendError;
+
+      this.sendError = undefined;
+      this.sendErrorType = undefined;
+      throw error;
+    }
+
     this.sent.push(message);
   }
 

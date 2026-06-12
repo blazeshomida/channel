@@ -12,12 +12,12 @@ Subsequent messages for the unused identifier should retain the existing unknown
 
 ## Acceptance criteria
 
-- [ ] A failed request send rejects with the original send error.
-- [ ] Failed request sends leave no pending request or abort listener behind.
-- [ ] A failed stream request or first pull rejects with the original send error.
-- [ ] Failed stream sends leave no consumer registration or abort listener behind.
-- [ ] Later requests and streams continue to work after a send failure.
-- [ ] Focused request and stream lifecycle tests pass.
+- [x] A failed request send rejects with the original send error.
+- [x] Failed request sends leave no pending request or abort listener behind.
+- [x] A failed stream request or first pull rejects with the original send error.
+- [x] Failed stream sends leave no consumer registration or abort listener behind.
+- [x] Later requests and streams continue to work after a send failure.
+- [x] Focused request and stream lifecycle tests pass.
 
 ## Blocked by
 

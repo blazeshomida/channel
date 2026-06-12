@@ -1,7 +1,11 @@
 /// <reference lib="dom" />
 
+import type { PeerMessage } from "../../src/peer/messages";
+
 import { expect, test } from "vite-plus/test";
 
+import { createChannel, type TransportListener } from "../../src";
+import { createProtocolRuntime } from "../../src/peer/_runtime/create-protocol-runtime";
 import { createTestPeer, createTestPeerWithOptions, getErrorMessage } from "./helpers";
 
 async function flushAsyncWork(): Promise<void> {
@@ -28,6 +32,179 @@ test("already-aborted stream signals reject without sending messages", async () 
   });
 
   expect(transport.sent).toEqual([]);
+});
+
+test("failed stream request sends roll back consumer state", async () => {
+  const errors: string[] = [];
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(error, context) {
+      errors.push(`${context.type}:${getErrorMessage(error)}`);
+    },
+  });
+  const controller = new AbortController();
+  const sendError = new Error("Stream request send failed.");
+
+  transport.sendError = sendError;
+  transport.sendErrorType = "stream-request";
+
+  const stream = peer.stream({
+    name: "numbers",
+    payload: null,
+    signal: controller.signal,
+  });
+
+  await expect(stream.next()).rejects.toBe(sendError);
+
+  controller.abort("too late");
+
+  expect(transport.sent).toEqual([]);
+
+  transport.emit({
+    type: "stream-item",
+    id: 1,
+    payload: 1,
+  });
+
+  expect(errors).toEqual(['stream-message:No pending stream for message "1".']);
+});
+
+test("failed first stream pulls roll back state without affecting later streams", async () => {
+  const errors: string[] = [];
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(error, context) {
+      errors.push(`${context.type}:${getErrorMessage(error)}`);
+    },
+  });
+  const controller = new AbortController();
+  const sendError = new Error("Stream pull send failed.");
+
+  transport.sendError = sendError;
+  transport.sendErrorType = "stream-pull";
+
+  const failedStream = peer.stream({
+    name: "numbers",
+    payload: null,
+    signal: controller.signal,
+  });
+
+  await expect(failedStream.next()).rejects.toBe(sendError);
+
+  controller.abort("too late");
+
+  expect(transport.sent).toEqual([
+    {
+      type: "stream-request",
+      id: 1,
+      name: "numbers",
+      payload: null,
+    },
+    {
+      type: "cancel",
+      id: 1,
+    },
+  ]);
+
+  transport.emit({
+    type: "stream-item",
+    id: 1,
+    payload: 1,
+  });
+
+  expect(errors).toEqual(['stream-message:No pending stream for message "1".']);
+
+  const nextStream = peer.stream<null, number>({
+    name: "numbers",
+    payload: null,
+  });
+  const next = nextStream.next();
+
+  transport.emit({
+    type: "stream-item",
+    id: 2,
+    payload: 2,
+  });
+
+  await expect(next).resolves.toEqual({
+    done: false,
+    value: 2,
+  });
+});
+
+test("failed first stream pulls cancel the remote producer", async () => {
+  let consumerListener: TransportListener<PeerMessage> | undefined;
+  let producerListener: TransportListener<PeerMessage> | undefined;
+  const sendError = new Error("Stream pull send failed.");
+  let producerSignal: AbortSignal | undefined;
+  let producerReturned = false;
+
+  const consumer = createProtocolRuntime({
+    channel: createChannel<PeerMessage>({
+      send(message) {
+        if (message.type === "stream-pull") {
+          throw sendError;
+        }
+
+        producerListener?.(message);
+      },
+      subscribe(listener) {
+        consumerListener = listener;
+
+        return () => {
+          consumerListener = undefined;
+        };
+      },
+    }),
+  });
+  const producer = createProtocolRuntime({
+    channel: createChannel<PeerMessage>({
+      send(message) {
+        consumerListener?.(message);
+      },
+      subscribe(listener) {
+        producerListener = listener;
+
+        return () => {
+          producerListener = undefined;
+        };
+      },
+    }),
+  });
+
+  producer.handleStream({
+    name: "numbers",
+    handler(_payload, context) {
+      producerSignal = context.signal;
+
+      return {
+        [Symbol.asyncIterator]() {
+          return {
+            next() {
+              return new Promise<IteratorResult<number>>(() => {});
+            },
+            return() {
+              producerReturned = true;
+
+              return Promise.resolve({
+                done: true,
+                value: undefined,
+              });
+            },
+          };
+        },
+      };
+    },
+  });
+
+  const stream = consumer.stream({
+    name: "numbers",
+    payload: null,
+  });
+
+  await expect(stream.next()).rejects.toBe(sendError);
+  await flushAsyncWork();
+
+  expect(producerSignal?.aborted).toBe(true);
+  expect(producerReturned).toBe(true);
 });
 
 test("return cancels an active stream and closes the iterator", async () => {
