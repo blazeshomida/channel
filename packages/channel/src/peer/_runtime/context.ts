@@ -1,6 +1,7 @@
 import type { Channel } from "../../channel";
 import type { PeerMessage } from "../messages";
-import type { CreatePeerOptions, PeerErrorContext, PeerErrorHandler } from "../types";
+import type { PeerErrorContext, PeerErrorHandler } from "../types";
+import type { CreateProtocolRuntimeOptions } from "./types";
 
 import {
   createActiveRequestRegistry,
@@ -35,7 +36,7 @@ import {
 } from "../_registries/stream-handlers";
 
 interface CreateContextArgs<TSendOptions> {
-  options: CreatePeerOptions<TSendOptions>;
+  options: CreateProtocolRuntimeOptions<TSendOptions>;
 }
 
 export interface PeerContext<TSendOptions = void> {

@@ -1,15 +1,15 @@
 /// <reference lib="dom" />
 
 import type { PeerContext } from "../_runtime/context";
+import type { ProtocolRequestOptions } from "../_runtime/types";
 import type { PeerCancelMessage } from "../messages";
-import type { PeerRequestOptions } from "../types";
 
 import { createPeerClosedError, createRequestCancelledError } from "../_runtime/errors";
 import { send } from "./send";
 
 interface RequestArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;
-  options: PeerRequestOptions<TPayload, TSendOptions>;
+  options: ProtocolRequestOptions<TPayload, TSendOptions>;
 }
 
 function rejectIfClosed<TResult, TSendOptions>(

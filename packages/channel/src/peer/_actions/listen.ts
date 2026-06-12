@@ -1,20 +1,21 @@
-import type { PeerDispose, PeerOnOptions, PeerOnceOptions } from "../types";
+import type { ProtocolOnOptions, ProtocolOnceOptions } from "../_runtime/types";
+import type { PeerDispose } from "../types";
 
 import { assertOpen, type PeerContext } from "../_runtime/context";
 
 interface ListenArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;
-  options: PeerOnOptions<TPayload>;
+  options: ProtocolOnOptions<TPayload>;
 }
 
 interface ListenOnceArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;
-  options: PeerOnceOptions<TPayload>;
+  options: ProtocolOnceOptions<TPayload>;
 }
 
 interface AddListenerArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;
-  options: PeerOnOptions<TPayload> | PeerOnceOptions<TPayload>;
+  options: ProtocolOnOptions<TPayload> | ProtocolOnceOptions<TPayload>;
   once: boolean;
 }
 

@@ -3,7 +3,7 @@ import type { PeerMessage } from "../../src/peer/messages";
 import { expect, test } from "vite-plus/test";
 
 import { createChannel, type TransportListener } from "../../src";
-import { createRawPeer } from "../../src/peer/create-raw-peer";
+import { createProtocolRuntime } from "../../src/peer/_runtime/create-protocol-runtime";
 import { createTestPeer, createTestPeerWithOptions, getErrorMessage } from "./helpers";
 
 async function flushAsyncWork(): Promise<void> {
@@ -182,7 +182,7 @@ test("handles stream errors delivered synchronously during the initial send", as
       };
     },
   });
-  const peer = createRawPeer({ channel });
+  const peer = createProtocolRuntime({ channel });
   const stream = peer.stream({
     name: "broken",
     payload: null,

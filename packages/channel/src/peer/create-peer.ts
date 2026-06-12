@@ -1,4 +1,5 @@
 import type { Channel } from "../channel";
+import type { ProtocolStreamHandler } from "./_runtime/types";
 import type { Contract } from "./contract";
 import type {
   CreatePeerOptions,
@@ -15,32 +16,31 @@ import type {
   StreamName,
 } from "./contract-types";
 import type { PeerMessage } from "./messages";
-import type { PeerStreamHandler } from "./types";
 
 import { createContractEvents } from "./_contract/events";
 import { createValidatedStream } from "./_contract/validated-stream";
+import { createProtocolRuntime } from "./_runtime/create-protocol-runtime";
 import { validate } from "./_runtime/validation";
-import { createRawPeer } from "./create-raw-peer";
 
 export function createPeer<const TContract extends Contract, TSendOptions = void>({
   contract,
   channel,
   onError,
 }: CreatePeerOptions<TContract, TSendOptions>): Peer<TContract, TSendOptions> {
-  const rawPeerOptions = {
-    // The raw protocol is private; the contract peer owns this transport seam.
+  const runtimeOptions = {
+    // The protocol is private; the contract peer owns this transport seam.
     // eslint-disable-next-line typescript/no-unsafe-type-assertion -- createPeer is the sole adapter from the public unknown channel to the private peer protocol.
     channel: channel as Channel<PeerMessage, PeerMessage, TSendOptions>,
   };
 
   if (onError !== undefined) {
-    Object.assign(rawPeerOptions, { onError });
+    Object.assign(runtimeOptions, { onError });
   }
 
-  const rawPeer = createRawPeer(rawPeerOptions);
+  const runtime = createProtocolRuntime(runtimeOptions);
   const events = createContractEvents({
     contract,
-    peer: rawPeer,
+    runtime,
     ...(onError === undefined ? {} : { onError }),
   });
 
@@ -49,7 +49,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
       options: PeerRequestOptions<TContract, TName, TSendOptions>,
     ): ReturnType<Peer<TContract, TSendOptions>["request"]> {
       const operation = contract.operations[options.name];
-      const response = rawPeer.request({
+      const response = runtime.request({
         name: options.name,
         payload: options.input,
         ...("send" in options ? { send: options.send } : {}),
@@ -72,7 +72,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
       options: PeerStreamOptions<TContract, TName, TSendOptions>,
     ) {
       const operation = contract.operations[options.name];
-      const rawStream = rawPeer.stream({
+      const protocolStream = runtime.stream({
         name: options.name,
         payload: options.input,
         ...("send" in options ? { send: options.send } : {}),
@@ -81,7 +81,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
       });
 
       return createValidatedStream({
-        stream: rawStream,
+        stream: protocolStream,
         schema: operation?.kind === "stream" ? operation.item : undefined,
         operation: options.name,
       });
@@ -90,7 +90,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
     emit<const TName extends EventName<TContract>>(
       options: PeerEmitOptions<TContract, TName, TSendOptions>,
     ) {
-      rawPeer.notify({
+      runtime.notify({
         name: options.name,
         payload: options.input,
         ...("send" in options ? { send: options.send } : {}),
@@ -109,7 +109,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
           context: Parameters<typeof options.handler>[1],
         ) => unknown;
 
-        return rawPeer.handle({
+        return runtime.handle({
           name: options.name,
           async handler(input, context) {
             const validatedInput = await validate({
@@ -131,9 +131,9 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
 
       if (operation?.kind === "stream") {
         // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Runtime contract dispatch narrows the unified handler to a stream handler.
-        const handler = options.handler as PeerStreamHandler<unknown, unknown>;
+        const handler = options.handler as ProtocolStreamHandler<unknown, unknown>;
 
-        return rawPeer.handleStream({
+        return runtime.handleStream({
           name: options.name,
           async *handler(input, context) {
             const validatedInput = await validate({
@@ -182,7 +182,7 @@ export function createPeer<const TContract extends Contract, TSendOptions = void
 
     close() {
       events.close();
-      rawPeer.close();
+      runtime.close();
     },
   };
 }
