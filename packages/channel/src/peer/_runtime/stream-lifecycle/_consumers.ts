@@ -14,6 +14,8 @@ import { send } from "../../_actions/send";
 import { reportError } from "../context";
 import { createPeerClosedError, createPeerError, createRequestCancelledError } from "../errors";
 
+const maxCancelledConsumers = 1024;
+
 interface PendingPull<TResult> {
   resolve(result: IteratorResult<TResult>): void;
   reject(error: unknown): void;
@@ -76,6 +78,24 @@ export function createStreamConsumers<TSendOptions>({
 }: CreateStreamConsumersArgs<TSendOptions>): StreamConsumers<TSendOptions> {
   const consumers = new Map<number, ConsumerStream>();
   const cancelledConsumers = new Set<number>();
+  const cancelledConsumerOrder: number[] = [];
+
+  const rememberCancelledConsumer = (id: number): void => {
+    if (cancelledConsumers.has(id)) {
+      return;
+    }
+
+    cancelledConsumers.add(id);
+    cancelledConsumerOrder.push(id);
+
+    while (cancelledConsumerOrder.length > maxCancelledConsumers) {
+      const expiredId = cancelledConsumerOrder.shift();
+
+      if (expiredId !== undefined) {
+        cancelledConsumers.delete(expiredId);
+      }
+    }
+  };
 
   const reportUnknownStreamMessage = (id: number): void => {
     reportError({
@@ -170,7 +190,7 @@ export function createStreamConsumers<TSendOptions>({
           return;
         }
 
-        cancelledConsumers.add(streamId);
+        rememberCancelledConsumer(streamId);
         fail(error);
 
         send({
@@ -295,7 +315,7 @@ export function createStreamConsumers<TSendOptions>({
 
         return() {
           if (!closed && started && id !== undefined) {
-            cancelledConsumers.add(id);
+            rememberCancelledConsumer(id);
             send({
               context,
               message: createCancelMessage(id, undefined),
@@ -358,6 +378,7 @@ export function createStreamConsumers<TSendOptions>({
 
       consumers.clear();
       cancelledConsumers.clear();
+      cancelledConsumerOrder.length = 0;
 
       for (const consumer of pendingConsumers) {
         consumer.fail(error);

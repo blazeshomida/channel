@@ -103,6 +103,48 @@ test("stream signal abort rejects pending pulls and ignores late items", async (
   expect(errors).toEqual([]);
 });
 
+test("cancelled stream tracking is bounded", async () => {
+  const errors: string[] = [];
+  const { peer, transport } = createTestPeerWithOptions({
+    onError(error, context) {
+      errors.push(`${context.type}:${getErrorMessage(error)}`);
+    },
+  });
+  const cancellations: Array<Promise<void>> = [];
+
+  for (let index = 0; index < 1_025; index += 1) {
+    const stream = peer.stream({
+      name: "numbers",
+      payload: index,
+    });
+    const next = stream.next();
+
+    void stream.return();
+    cancellations.push(
+      expect(next).resolves.toEqual({
+        done: true,
+        value: undefined,
+      }),
+    );
+  }
+
+  await Promise.all(cancellations);
+
+  transport.emit({
+    type: "stream-item",
+    id: 1,
+    payload: 1,
+  });
+
+  transport.emit({
+    type: "stream-item",
+    id: 1_025,
+    payload: 1,
+  });
+
+  expect(errors).toEqual(['stream-message:No pending stream for message "1".']);
+});
+
 test("cancel messages abort stream handlers and close their iterators", async () => {
   const { peer, transport } = createTestPeer();
   let handlerSignal: AbortSignal | undefined;
