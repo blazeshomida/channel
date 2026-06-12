@@ -138,8 +138,10 @@ export function event(options?: EventSchemaOptions<Schema>): EventOperation {
   };
 }
 
-export function createContract<const TOperations extends ContractOperations>(options: {
-  operations: TOperations;
-}): Contract<TOperations> {
-  return options;
+export function createContract<const TOperations extends ContractOperations>(
+  operations: TOperations,
+): Contract<TOperations> {
+  return {
+    operations,
+  };
 }

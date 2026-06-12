@@ -5,9 +5,7 @@ import { createLinkedTransports, createSchema } from "./contract-helpers";
 
 test("type-only stream operations work through the contract peer", async () => {
   const contract = createContract({
-    operations: {
-      count: stream<{ count: number }, number>(),
-    },
+    count: stream<{ count: number }, number>(),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -70,12 +68,10 @@ test("schema-backed streams transform input at the handler and items at the call
       : { issues: [{ message: "Expected a number." }] };
   });
   const contract = createContract({
-    operations: {
-      count: stream({
-        input,
-        item,
-      }),
-    },
+    count: stream({
+      input,
+      item,
+    }),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -125,12 +121,10 @@ test("invalid stream input fails before the handler runs", async () => {
     return typeof value === "number" ? { value } : { issues: [{ message: "Expected a number." }] };
   });
   const contract = createContract({
-    operations: {
-      count: stream({
-        input,
-        item,
-      }),
-    },
+    count: stream({
+      input,
+      item,
+    }),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -181,12 +175,10 @@ test("invalid stream items fail the caller and cancel the producer", async () =>
     return { value };
   });
   const contract = createContract({
-    operations: {
-      values: stream({
-        input,
-        item,
-      }),
-    },
+    values: stream({
+      input,
+      item,
+    }),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -225,9 +217,7 @@ test("invalid stream items fail the caller and cancel the producer", async () =>
 
 test("disposed stream handlers can be registered again", async () => {
   const contract = createContract({
-    operations: {
-      values: stream<null, number>(),
-    },
+    values: stream<null, number>(),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -277,9 +267,7 @@ test("disposed stream handlers can be registered again", async () => {
 
 test("closing a contract peer rejects pending stream pulls", async () => {
   const contract = createContract({
-    operations: {
-      values: stream<null, number>(),
-    },
+    values: stream<null, number>(),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({

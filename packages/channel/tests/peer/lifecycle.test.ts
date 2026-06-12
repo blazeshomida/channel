@@ -17,9 +17,7 @@ test("close is idempotent", () => {
 
 test("closing contract operations disposes protocol registrations once", () => {
   const contract = createContract({
-    operations: {
-      run: request<void, void>(),
-    },
+    run: request<void, void>(),
   });
   const { peer: runtime } = createTestPeer();
   const handle = runtime.handle.bind(runtime);

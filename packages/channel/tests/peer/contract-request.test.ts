@@ -5,9 +5,7 @@ import { createLinkedTransports, createSchema } from "./contract-helpers";
 
 test("type-only request operations work through the contract peer", async () => {
   const contract = createContract({
-    operations: {
-      double: request<{ value: number }, number>(),
-    },
+    double: request<{ value: number }, number>(),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -70,12 +68,10 @@ test("schema-backed requests transform input at the handler and output at the ca
     };
   });
   const contract = createContract({
-    operations: {
-      double: request({
-        input,
-        output,
-      }),
-    },
+    double: request({
+      input,
+      output,
+    }),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -129,12 +125,10 @@ test("invalid request input rejects before the handler runs", async () => {
     return typeof value === "number" ? { value } : { issues: [{ message: "Expected a number." }] };
   });
   const contract = createContract({
-    operations: {
-      double: request({
-        input,
-        output,
-      }),
-    },
+    double: request({
+      input,
+      output,
+    }),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -187,12 +181,10 @@ test("invalid request output rejects at the caller", async () => {
     return { value };
   });
   const contract = createContract({
-    operations: {
-      calculate: request({
-        input,
-        output,
-      }),
-    },
+    calculate: request({
+      input,
+      output,
+    }),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -228,9 +220,7 @@ test("invalid request output rejects at the caller", async () => {
 
 test("missing request handlers reject through the contract peer", async () => {
   const contract = createContract({
-    operations: {
-      missing: request<null, null>(),
-    },
+    missing: request<null, null>(),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -255,9 +245,7 @@ test("missing request handlers reject through the contract peer", async () => {
 
 test("disposed request handlers can be registered again", async () => {
   const contract = createContract({
-    operations: {
-      value: request<null, number>(),
-    },
+    value: request<null, number>(),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -303,9 +291,7 @@ test("disposed request handlers can be registered again", async () => {
 
 test("request cancellation still aborts contract handlers", async () => {
   const contract = createContract({
-    operations: {
-      wait: request<null, never>(),
-    },
+    wait: request<null, never>(),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
@@ -351,9 +337,7 @@ test("request cancellation still aborts contract handlers", async () => {
 
 test("closing a contract peer rejects pending requests", async () => {
   const contract = createContract({
-    operations: {
-      wait: request<null, never>(),
-    },
+    wait: request<null, never>(),
   });
   const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
   const caller = createPeer({
