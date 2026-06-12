@@ -1,10 +1,10 @@
-import type { PeerHandleOptions } from "../types";
+import type { ProtocolHandleOptions } from "../_runtime/types";
 
 import { assertOpen, type PeerContext } from "../_runtime/context";
 
 interface HandleArgs<TPayload, TResult, TSendOptions> {
   context: PeerContext<TSendOptions>;
-  options: PeerHandleOptions<TPayload, TResult>;
+  options: ProtocolHandleOptions<TPayload, TResult>;
 }
 
 interface HasHandlerArgs<TSendOptions> {

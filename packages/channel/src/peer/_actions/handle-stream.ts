@@ -1,11 +1,11 @@
 import type { PeerContext } from "../_runtime/context";
-import type { PeerHandleStreamOptions } from "../types";
+import type { ProtocolHandleStreamOptions } from "../_runtime/types";
 
 import { assertOpen } from "../_runtime/context";
 
 interface HandleStreamArgs<TPayload, TResult, TSendOptions> {
   context: PeerContext<TSendOptions>;
-  options: PeerHandleStreamOptions<TPayload, TResult>;
+  options: ProtocolHandleStreamOptions<TPayload, TResult>;
 }
 
 interface HasStreamHandlerArgs<TSendOptions> {

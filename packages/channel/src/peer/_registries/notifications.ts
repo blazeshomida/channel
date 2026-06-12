@@ -1,19 +1,15 @@
-import type {
-  PeerDispose,
-  PeerErrorHandler,
-  PeerNotificationContext,
-  PeerNotificationListener,
-} from "../types";
+import type { ProtocolNotificationListener } from "../_runtime/types";
+import type { PeerDispose, PeerErrorHandler, PeerNotificationContext } from "../types";
 
 export interface RegisteredNotificationListener {
-  listener: PeerNotificationListener<unknown>;
+  listener: ProtocolNotificationListener<unknown>;
   onError: PeerErrorHandler | undefined;
   once: boolean;
 }
 
 export interface NotificationListenerOptions {
   name: string;
-  listener: PeerNotificationListener<unknown>;
+  listener: ProtocolNotificationListener<unknown>;
   onError: PeerErrorHandler | undefined;
   once: boolean;
 }

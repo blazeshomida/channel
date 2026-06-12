@@ -1,7 +1,8 @@
-import type { PeerErrorHandler, PeerHandler } from "../types";
+import type { ProtocolHandler } from "../_runtime/types";
+import type { PeerErrorHandler } from "../types";
 
 export interface RegisteredHandler {
-  handler: PeerHandler<unknown, unknown>;
+  handler: ProtocolHandler<unknown, unknown>;
   onError: PeerErrorHandler | undefined;
 }
 

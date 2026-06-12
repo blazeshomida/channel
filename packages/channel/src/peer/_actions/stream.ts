@@ -1,15 +1,16 @@
 /// <reference lib="dom" />
 
 import type { PeerContext } from "../_runtime/context";
+import type { ProtocolStreamOptions } from "../_runtime/types";
 import type { PeerCancelMessage } from "../messages";
-import type { PeerErrorPayload, PeerStream, PeerStreamOptions } from "../types";
+import type { PeerErrorPayload, PeerStream } from "../types";
 
 import { createPeerClosedError, createRequestCancelledError } from "../_runtime/errors";
 import { send } from "./send";
 
 interface StreamArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;
-  options: PeerStreamOptions<TPayload, TSendOptions>;
+  options: ProtocolStreamOptions<TPayload, TSendOptions>;
 }
 
 interface PendingPull<TResult> {

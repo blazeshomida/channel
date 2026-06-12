@@ -1,10 +1,6 @@
+import type { ProtocolRuntime } from "../_runtime/types";
 import type { Contract } from "../contract";
-import type {
-  Peer as RawPeer,
-  PeerDispose,
-  PeerErrorHandler,
-  PeerNotificationContext,
-} from "../types";
+import type { PeerDispose, PeerErrorHandler, PeerNotificationContext } from "../types";
 
 import { validate } from "../_runtime/validation";
 
@@ -22,7 +18,7 @@ interface ContractEventState {
 
 interface CreateContractEventsArgs<TSendOptions> {
   contract: Contract;
-  peer: RawPeer<TSendOptions>;
+  runtime: ProtocolRuntime<TSendOptions>;
   onError?: PeerErrorHandler;
 }
 
@@ -40,7 +36,7 @@ export interface ContractEvents {
 
 export function createContractEvents<TSendOptions>({
   contract,
-  peer,
+  runtime,
   onError,
 }: CreateContractEventsArgs<TSendOptions>): ContractEvents {
   const events = new Map<string, ContractEventState>();
@@ -156,7 +152,7 @@ export function createContractEvents<TSendOptions>({
       if (!state) {
         state = {
           listeners: new Set(),
-          unsubscribe: peer.on({
+          unsubscribe: runtime.on({
             name,
             listener(input) {
               receive(name, input);

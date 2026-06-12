@@ -1,11 +1,11 @@
-import type { PeerNotifyOptions } from "../types";
+import type { ProtocolNotifyOptions } from "../_runtime/types";
 
 import { assertOpen, type PeerContext } from "../_runtime/context";
 import { send } from "./send";
 
 interface NotifyArgs<TPayload, TSendOptions> {
   context: PeerContext<TSendOptions>;
-  options: PeerNotifyOptions<TPayload, TSendOptions>;
+  options: ProtocolNotifyOptions<TPayload, TSendOptions>;
 }
 
 export function notify<TPayload = unknown, TSendOptions = void>({
