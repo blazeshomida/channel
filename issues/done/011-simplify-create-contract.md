@@ -13,13 +13,13 @@ examples, tests, inferred types, and exports without changing operation behavior
 
 ## Acceptance criteria
 
-- [ ] `createContract` accepts a direct operation map.
-- [ ] Request, stream, and event names and values retain their current inference.
-- [ ] Contract-bound Peer runtime behavior remains unchanged.
-- [ ] All package tests and examples use the simplified API.
-- [ ] Generated declarations expose the simplified signature without private implementation types.
-- [ ] A changeset records the public API change.
-- [ ] `vpr ready` passes.
+- [x] `createContract` accepts a direct operation map.
+- [x] Request, stream, and event names and values retain their current inference.
+- [x] Contract-bound Peer runtime behavior remains unchanged.
+- [x] All package tests and examples use the simplified API.
+- [x] Generated declarations expose the simplified signature without private implementation types.
+- [x] A changeset records the public API change.
+- [x] `vpr ready` passes.
 
 ## Blocked by
 

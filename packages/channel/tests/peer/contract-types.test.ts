@@ -28,14 +28,12 @@ function assertContractTypes(): void {
       : { issues: [{ message: "Expected a number." }] };
   });
   const contract = createContract({
-    operations: {
-      double: request({
-        input: requestInput,
-        output: requestOutput,
-      }),
-      count: stream<{ count: number }, number>(),
-      log: event<{ message: string }>(),
-    },
+    double: request({
+      input: requestInput,
+      output: requestOutput,
+    }),
+    count: stream<{ count: number }, number>(),
+    log: event<{ message: string }>(),
   });
   const peer = createPeer({
     contract,

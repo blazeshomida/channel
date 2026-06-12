@@ -12,9 +12,7 @@ async function flushAsyncWork(): Promise<void> {
 
 test("type-only events work through the contract peer", () => {
   const contract = createContract({
-    operations: {
-      log: event<{ message: string }>(),
-    },
+    log: event<{ message: string }>(),
   });
   const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
   const sender = createPeer({
@@ -46,9 +44,7 @@ test("type-only events work through the contract peer", () => {
 
 test("event listener disposal is idempotent", () => {
   const contract = createContract({
-    operations: {
-      log: event<{ message: string }>(),
-    },
+    log: event<{ message: string }>(),
   });
   const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
   const sender = createPeer({
@@ -102,11 +98,9 @@ test("schema-backed events validate once and deliver transformed input to every 
     };
   });
   const contract = createContract({
-    operations: {
-      log: event({
-        input,
-      }),
-    },
+    log: event({
+      input,
+    }),
   });
   const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
   const sender = createPeer({
@@ -153,11 +147,9 @@ test("schema-backed events validate and deliver in arrival order", async () => {
     });
   });
   const contract = createContract({
-    operations: {
-      progress: event({
-        input,
-      }),
-    },
+    progress: event({
+      input,
+    }),
   });
   const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
   const sender = createPeer({
@@ -201,11 +193,9 @@ test("events are delivered only to listeners registered when the event arrives",
     });
   });
   const contract = createContract({
-    operations: {
-      log: event({
-        input,
-      }),
-    },
+    log: event({
+      input,
+    }),
   });
   const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
   const sender = createPeer({
@@ -259,11 +249,9 @@ test("invalid events skip listeners and report through root onError", async () =
     return { value: { message: value.message } };
   });
   const contract = createContract({
-    operations: {
-      log: event({
-        input,
-      }),
-    },
+    log: event({
+      input,
+    }),
   });
   const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
   const sender = createPeer({
@@ -317,11 +305,9 @@ test("once waits for the first valid event", async () => {
       : { issues: [{ message: "Expected a positive number." }] };
   });
   const contract = createContract({
-    operations: {
-      progress: event({
-        input,
-      }),
-    },
+    progress: event({
+      input,
+    }),
   });
   const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
   const sender = createPeer({
@@ -352,9 +338,7 @@ test("once waits for the first valid event", async () => {
 
 test("listener errors report through local and root error handlers", () => {
   const contract = createContract({
-    operations: {
-      log: event<{ message: string }>(),
-    },
+    log: event<{ message: string }>(),
   });
   const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
   const sender = createPeer({
@@ -395,9 +379,7 @@ test("listener errors report through local and root error handlers", () => {
 
 test("throwing event onError callbacks do not escape delivery", () => {
   const contract = createContract({
-    operations: {
-      log: event<{ message: string }>(),
-    },
+    log: event<{ message: string }>(),
   });
   const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
   const sender = createPeer({
