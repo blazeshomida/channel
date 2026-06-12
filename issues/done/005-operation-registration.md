@@ -14,13 +14,13 @@ and disposal. Request and stream protocol mechanics remain distinct where behavi
 
 ## Acceptance criteria
 
-- [ ] `peer.handle(...)` remains the only public request and stream registration interface.
-- [ ] Contract operation kind selects the internal protocol path.
-- [ ] Handler input validation and transformation remain consuming-side and occur once.
-- [ ] Type-only operations bypass runtime validation.
-- [ ] Duplicate registration, disposal, missing-handler errors, and cancellation remain unchanged.
-- [ ] Handler inference remains covered by compile-time tests.
-- [ ] Public request and stream tests pass.
+- [x] `peer.handle(...)` remains the only public request and stream registration interface.
+- [x] Contract operation kind selects the internal protocol path.
+- [x] Handler input validation and transformation remain consuming-side and occur once.
+- [x] Type-only operations bypass runtime validation.
+- [x] Duplicate registration, disposal, missing-handler errors, and cancellation remain unchanged.
+- [x] Handler inference remains covered by compile-time tests.
+- [x] Public request and stream tests pass.
 
 ## Blocked by
 

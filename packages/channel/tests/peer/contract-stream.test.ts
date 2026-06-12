@@ -43,7 +43,10 @@ test("type-only stream operations work through the contract peer", async () => {
 });
 
 test("schema-backed streams transform input at the handler and items at the caller", async () => {
+  let inputValidations = 0;
   const input = createSchema<{ count: string }, { count: number }>((value) => {
+    inputValidations += 1;
+
     if (
       typeof value !== "object" ||
       value === null ||
@@ -105,6 +108,7 @@ test("schema-backed streams transform input at the handler and items at the call
   }
 
   expect(values).toEqual(["0", "1", "2"]);
+  expect(inputValidations).toBe(1);
 });
 
 test("invalid stream input fails before the handler runs", async () => {
@@ -217,6 +221,58 @@ test("invalid stream items fail the caller and cancel the producer", async () =>
     },
   });
   expect(signal?.aborted).toBe(true);
+});
+
+test("disposed stream handlers can be registered again", async () => {
+  const contract = createContract({
+    operations: {
+      values: stream<null, number>(),
+    },
+  });
+  const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
+  const caller = createPeer({
+    contract,
+    channel: createChannel(callerTransport),
+  });
+  const handler = createPeer({
+    contract,
+    channel: createChannel(handlerTransport),
+  });
+  const dispose = handler.handle({
+    name: "values",
+    async *handler() {
+      yield 1;
+    },
+  });
+
+  expect(() => {
+    handler.handle({
+      name: "values",
+      async *handler() {
+        yield 2;
+      },
+    });
+  }).toThrow('Stream handler already registered for "values".');
+
+  dispose();
+
+  handler.handle({
+    name: "values",
+    async *handler() {
+      yield 2;
+    },
+  });
+
+  const values: number[] = [];
+
+  for await (const value of caller.stream({
+    name: "values",
+    input: null,
+  })) {
+    values.push(value);
+  }
+
+  expect(values).toEqual([2]);
 });
 
 test("closing a contract peer rejects pending stream pulls", async () => {

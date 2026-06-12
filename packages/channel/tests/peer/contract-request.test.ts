@@ -37,7 +37,10 @@ test("type-only request operations work through the contract peer", async () => 
 });
 
 test("schema-backed requests transform input at the handler and output at the caller", async () => {
+  let inputValidations = 0;
   const input = createSchema<{ value: string }, { value: number }>(async (value) => {
+    inputValidations += 1;
+
     if (
       typeof value !== "object" ||
       value === null ||
@@ -99,6 +102,7 @@ test("schema-backed requests transform input at the handler and output at the ca
       },
     }),
   ).resolves.toBe("42");
+  expect(inputValidations).toBe(1);
 });
 
 test("invalid request input rejects before the handler runs", async () => {
@@ -247,6 +251,54 @@ test("missing request handlers reject through the contract peer", async () => {
   ).rejects.toMatchObject({
     code: "METHOD_NOT_FOUND",
   });
+});
+
+test("disposed request handlers can be registered again", async () => {
+  const contract = createContract({
+    operations: {
+      value: request<null, number>(),
+    },
+  });
+  const [callerTransport, handlerTransport] = createLinkedTransports<unknown>();
+  const caller = createPeer({
+    contract,
+    channel: createChannel(callerTransport),
+  });
+  const handler = createPeer({
+    contract,
+    channel: createChannel(handlerTransport),
+  });
+  const dispose = handler.handle({
+    name: "value",
+    handler() {
+      return 1;
+    },
+  });
+
+  expect(() => {
+    handler.handle({
+      name: "value",
+      handler() {
+        return 2;
+      },
+    });
+  }).toThrow('Handler already registered for "value".');
+
+  dispose();
+
+  handler.handle({
+    name: "value",
+    handler() {
+      return 2;
+    },
+  });
+
+  await expect(
+    caller.request({
+      name: "value",
+      input: null,
+    }),
+  ).resolves.toBe(2);
 });
 
 test("request cancellation still aborts contract handlers", async () => {
