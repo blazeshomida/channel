@@ -27,7 +27,6 @@ export function close<TSendOptions = void>({
   streams.close(createPeerClosedError());
   context.handlers.clear();
   context.streamHandlers.clear();
-  context.notifications.clear();
   unsubscribe();
   context.channel.close();
 }

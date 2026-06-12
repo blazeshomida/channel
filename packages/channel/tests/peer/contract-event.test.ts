@@ -2,6 +2,7 @@ import { expect, test } from "vite-plus/test";
 
 import { createChannel, createContract, createPeer, event } from "../../src";
 import { createLinkedTransports, createSchema } from "./contract-helpers";
+import { getErrorMessage } from "./helpers";
 
 async function flushAsyncWork(): Promise<void> {
   await new Promise<void>((resolve) => {
@@ -41,6 +42,41 @@ test("type-only events work through the contract peer", () => {
   });
 
   expect(messages).toEqual(["hello"]);
+});
+
+test("event listener disposal is idempotent", () => {
+  const contract = createContract({
+    operations: {
+      log: event<{ message: string }>(),
+    },
+  });
+  const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
+  const sender = createPeer({
+    contract,
+    channel: createChannel(senderTransport),
+  });
+  const receiver = createPeer({
+    contract,
+    channel: createChannel(listenerTransport),
+  });
+  const messages: string[] = [];
+  const dispose = receiver.on({
+    name: "log",
+    listener({ message }) {
+      messages.push(message);
+    },
+  });
+
+  dispose();
+  dispose();
+  sender.emit({
+    name: "log",
+    input: {
+      message: "hello",
+    },
+  });
+
+  expect(messages).toEqual([]);
 });
 
 test("schema-backed events validate once and deliver transformed input to every listener", async () => {
@@ -157,6 +193,55 @@ test("schema-backed events validate and deliver in arrival order", async () => {
   expect(values).toEqual([1, 2]);
 });
 
+test("events are delivered only to listeners registered when the event arrives", async () => {
+  let finishValidation: ((result: { value: string }) => void) | undefined;
+  const input = createSchema<string, string>(() => {
+    return new Promise((resolve) => {
+      finishValidation = resolve;
+    });
+  });
+  const contract = createContract({
+    operations: {
+      log: event({
+        input,
+      }),
+    },
+  });
+  const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
+  const sender = createPeer({
+    contract,
+    channel: createChannel(senderTransport),
+  });
+  const receiver = createPeer({
+    contract,
+    channel: createChannel(listenerTransport),
+  });
+  const messages: string[] = [];
+  const dispose = receiver.on({
+    name: "log",
+    listener(message) {
+      messages.push(`first:${message}`);
+    },
+  });
+
+  sender.emit({
+    name: "log",
+    input: "hello",
+  });
+  dispose();
+  receiver.on({
+    name: "log",
+    listener(message) {
+      messages.push(`second:${message}`);
+    },
+  });
+  finishValidation?.({ value: "HELLO" });
+
+  await flushAsyncWork();
+
+  expect(messages).toEqual([]);
+});
+
 test("invalid events skip listeners and report through root onError", async () => {
   const input = createSchema<{ message: string }, { message: string }>((value) => {
     if (
@@ -263,4 +348,47 @@ test("once waits for the first valid event", async () => {
   await flushAsyncWork();
 
   expect(values).toEqual([1]);
+});
+
+test("listener errors report through local and root error handlers", () => {
+  const contract = createContract({
+    operations: {
+      log: event<{ message: string }>(),
+    },
+  });
+  const [senderTransport, listenerTransport] = createLinkedTransports<unknown>();
+  const sender = createPeer({
+    contract,
+    channel: createChannel(senderTransport),
+  });
+  const errors: string[] = [];
+  const receiver = createPeer({
+    contract,
+    channel: createChannel(listenerTransport),
+    onError(error, context) {
+      errors.push(`root:${context.type}:${String(error)}`);
+    },
+  });
+
+  receiver.on({
+    name: "log",
+    listener() {
+      throw new Error("Listener failed.");
+    },
+    onError(error, context) {
+      errors.push(`local:${context.type}:${getErrorMessage(error)}`);
+    },
+  });
+
+  sender.emit({
+    name: "log",
+    input: {
+      message: "hello",
+    },
+  });
+
+  expect(errors).toEqual([
+    "local:notification:Listener failed.",
+    "root:notification:Error: Listener failed.",
+  ]);
 });

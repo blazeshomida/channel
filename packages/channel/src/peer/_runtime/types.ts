@@ -60,16 +60,9 @@ export interface ProtocolHandleStreamOptions<TPayload, TResult> {
   onError?: PeerErrorHandler;
 }
 
-export interface ProtocolOnOptions<TPayload> {
-  name: string;
-  listener: ProtocolNotificationListener<TPayload>;
-  onError?: PeerErrorHandler;
-}
-
-export type ProtocolOnceOptions<TPayload> = ProtocolOnOptions<TPayload>;
-
 export interface CreateProtocolRuntimeOptions<TSendOptions = void> {
   channel: Channel<PeerMessage, PeerMessage, TSendOptions>;
+  onNotification?: ProtocolNotificationListener<unknown>;
   onError?: PeerErrorHandler;
 }
 
@@ -89,7 +82,5 @@ export interface ProtocolRuntime<TSendOptions = void> {
   ): PeerDispose;
   hasStreamHandler(name: string): boolean;
   notify<TPayload = unknown>(options: ProtocolNotifyOptions<TPayload, TSendOptions>): void;
-  on<TPayload = unknown>(options: ProtocolOnOptions<TPayload>): PeerDispose;
-  once<TPayload = unknown>(options: ProtocolOnceOptions<TPayload>): PeerDispose;
   close(): void;
 }

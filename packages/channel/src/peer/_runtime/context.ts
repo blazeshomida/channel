@@ -1,7 +1,7 @@
 import type { Channel } from "../../channel";
 import type { PeerMessage } from "../messages";
 import type { PeerErrorContext, PeerErrorHandler } from "../types";
-import type { CreateProtocolRuntimeOptions } from "./types";
+import type { CreateProtocolRuntimeOptions, ProtocolNotificationListener } from "./types";
 
 import {
   createActiveRequestRegistry,
@@ -12,10 +12,6 @@ import {
   type CancelledRequestRegistry,
 } from "../_registries/cancelled-requests";
 import { createHandlerRegistry, type HandlerRegistry } from "../_registries/handlers";
-import {
-  createNotificationRegistry,
-  type NotificationRegistry,
-} from "../_registries/notifications";
 import {
   createPendingRequestRegistry,
   createRequestIdFactory,
@@ -39,7 +35,7 @@ export interface PeerContext<TSendOptions = void> {
   activeRequests: ActiveRequestRegistry;
   handlers: HandlerRegistry;
   streamHandlers: StreamHandlerRegistry;
-  notifications: NotificationRegistry;
+  onNotification?: ProtocolNotificationListener<unknown>;
   closed: boolean;
   onError?: PeerErrorHandler;
 }
@@ -55,9 +51,12 @@ export function createContext<TSendOptions>({
     activeRequests: createActiveRequestRegistry(),
     handlers: createHandlerRegistry(),
     streamHandlers: createStreamHandlerRegistry(),
-    notifications: createNotificationRegistry(),
     closed: false,
   };
+
+  if (options.onNotification !== undefined) {
+    context.onNotification = options.onNotification;
+  }
 
   if (options.onError !== undefined) {
     context.onError = options.onError;
