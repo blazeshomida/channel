@@ -17,16 +17,17 @@ import { listen, listenOnce } from "../_actions/listen";
 import { notify } from "../_actions/notify";
 import { receive } from "../_actions/receive";
 import { request } from "../_actions/request";
-import { stream } from "../_actions/stream";
 import { createContext } from "./context";
+import { createStreamLifecycle } from "./stream-lifecycle";
 
 export function createProtocolRuntime<TSendOptions = void>(
   options: CreateProtocolRuntimeOptions<TSendOptions>,
 ): ProtocolRuntime<TSendOptions> {
   const context = createContext({ options });
+  const streams = createStreamLifecycle({ context });
 
   const unsubscribe = context.channel.subscribe((message) => {
-    receive({ context, message });
+    receive({ context, message, streams });
   });
 
   return {
@@ -58,10 +59,7 @@ export function createProtocolRuntime<TSendOptions = void>(
     stream<TPayload = unknown, TResult = unknown>(
       streamOptions: ProtocolStreamOptions<TPayload, TSendOptions>,
     ) {
-      return stream<TResult, TPayload, TSendOptions>({
-        context,
-        options: streamOptions,
-      });
+      return streams.create<TPayload, TResult>(streamOptions);
     },
 
     handleStream<TPayload = unknown, TResult = unknown>(
@@ -104,6 +102,7 @@ export function createProtocolRuntime<TSendOptions = void>(
     close(): void {
       close({
         context,
+        streams,
         unsubscribe,
       });
     },

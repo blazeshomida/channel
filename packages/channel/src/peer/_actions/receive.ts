@@ -1,3 +1,4 @@
+import type { StreamLifecycle } from "../_runtime/stream-lifecycle";
 import type {
   PeerCancelMessage,
   PeerMessage,
@@ -23,18 +24,12 @@ import {
   isStreamPullMessage,
   isStreamRequestMessage,
 } from "../_runtime/message-guards";
-import {
-  receiveStreamEnd,
-  receiveStreamError,
-  receiveStreamItem,
-  receiveStreamPull,
-  receiveStreamRequest,
-} from "./receive-stream";
 import { send } from "./send";
 
 interface ReceiveArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;
   message: PeerMessage;
+  streams: StreamLifecycle<TSendOptions>;
 }
 
 interface HandleResponseArgs<TSendOptions> {
@@ -55,6 +50,7 @@ interface HandleNotificationArgs<TSendOptions> {
 interface HandleCancelArgs<TSendOptions> {
   context: PeerContext<TSendOptions>;
   message: PeerCancelMessage;
+  streams: StreamLifecycle<TSendOptions>;
 }
 
 function handleResponse<TSendOptions>({
@@ -202,12 +198,20 @@ function handleNotification<TSendOptions>({
   );
 }
 
-function handleCancel<TSendOptions>({ context, message }: HandleCancelArgs<TSendOptions>): void {
+function handleCancel<TSendOptions>({
+  context,
+  message,
+  streams,
+}: HandleCancelArgs<TSendOptions>): void {
   context.activeRequests.abort(message.id, message.reason);
-  context.activeStreams.abort(message.id, message.reason);
+  streams.cancelProducer(message.id, message.reason);
 }
 
-export function receive<TSendOptions>({ context, message }: ReceiveArgs<TSendOptions>): void {
+export function receive<TSendOptions>({
+  context,
+  message,
+  streams,
+}: ReceiveArgs<TSendOptions>): void {
   if (isResponseMessage(message)) {
     handleResponse({ context, message });
     return;
@@ -224,31 +228,31 @@ export function receive<TSendOptions>({ context, message }: ReceiveArgs<TSendOpt
   }
 
   if (isCancelMessage(message)) {
-    handleCancel({ context, message });
+    handleCancel({ context, message, streams });
     return;
   }
 
   if (isStreamRequestMessage(message)) {
-    receiveStreamRequest({ context, message });
+    streams.receiveRequest(message);
     return;
   }
 
   if (isStreamPullMessage(message)) {
-    void receiveStreamPull({ context, message });
+    void streams.receivePull(message);
     return;
   }
 
   if (isStreamItemMessage(message)) {
-    receiveStreamItem({ context, message });
+    streams.receiveItem(message);
     return;
   }
 
   if (isStreamEndMessage(message)) {
-    receiveStreamEnd({ context, message });
+    streams.receiveEnd(message);
     return;
   }
 
   if (isStreamErrorMessage(message)) {
-    receiveStreamError({ context, message });
+    streams.receiveError(message);
   }
 }
